@@ -1,4 +1,42 @@
 var dataobj = {
+    tableHzColumns: [
+        {
+            title: '总利润值',
+            align: 'center',
+            key: 'value',
+            width: 100
+        },
+        {
+            title: '总利润率',
+            align: 'center',
+            key: 'rate',
+            width: 100
+        },
+        {
+            title: 'DT总数',
+            align: 'center',
+            key: 'dtcount',
+            width: 80
+        },
+        {
+            title: 'DT数量(P.>5%)',
+            align: 'center',
+            key: 'dtmore',
+            width: 80
+        },
+        {
+            title: 'DT数量(2%<P.<5%)',
+            align: 'center',
+            key: 'dtmiddle',
+            width: 80
+        },
+         {
+            title: 'DT数量(P.<5%)',
+            align: 'center',
+            key: 'dtsmall',
+            width: 80
+        }
+    ],
     tableColumns:[
     {
         title: '省份',

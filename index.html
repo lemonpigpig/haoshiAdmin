@@ -50,7 +50,7 @@
 					</div>
 					<div class="single-page-con">
 						<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
-							<div id="data-map" style="width: 1024px; height: 568px;">
+							<div id="data-map" style="width: 1024px; height: 468px;">
 							</div>
 							<div id="container">
 								<Col class="demo-spin-col" span="8">
@@ -67,7 +67,15 @@
 												<div>Loading</div>
 											</Spin>
 										</Col>
-										<i-table height="500" :columns="tableColumns" :data="tableData" border disabled-hover v-else></i-table>
+										<i-table height="320" :columns="tableColumns" :data="tableData" border disabled-hover v-else></i-table>
+										 <Card :bordered="false">
+											<p slot="title">全国汇总表格</p>
+											<p>
+												<i-table :columns="tableHzColumns" :data="tableHzData" border disabled-hover ></i-table>
+											</p>
+										</Card>
+										<!--<p>全国汇总表格</p>
+										<i-table :columns="tableHzColumns" :data="tableHzData" border disabled-hover ></i-table>-->
 									</row>
 								</div>
 							</div>
@@ -80,7 +88,7 @@
 	</div>
 	
 	<script>
-		let loading = true;
+		let loading = false;
 		let cityMap = {
 			"台湾": {},
 			"河北": {
@@ -416,22 +424,14 @@
 					// console.log(JSON.stringify(mapping,null,4));
 			});
 		}
-		
-
-
-		// let mapChat = echarts.init(document.getElementById('data-map'));
-
-		// mapChat.on('click',(params)=>{
-		// 	vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
-		// 	vueModel.getTableList(vueModel.view);
-		// });
-
 		let vueModel  = new Vue({
 			el: '#main',
-			data : {
+		data : {
 				view : '',
 				tableColumns: dataobj.tableColumns,
+				tableHzColumns:dataobj.tableHzColumns,
 				tableData: [],
+				tableHzData: [],
 				loading: loading,
 				currentPath: '',
 				shrink: false,
@@ -475,22 +475,21 @@
 					});
 					this.view = 'china';
 					getChinaJson();
+					this.tableHzData = [
+						{
+							value: 111111111,
+							rate: '10.0%',
+							dtcount: 10,
+							dtmore: 3,
+							dtmiddle: 4,
+							dtsmall: 3
+						}
+					]
 				},
 			},
 			mounted() {
 				this.init();
 				this.getTableList();
-				var that = this;
-				// Add a response interceptor
-				axios.interceptors.response.use(function (response) {
-					// Do something with response data
-					that.loading = false;
-					return response;
-				}, function (error) {
-					// Do something with response error
-					that.loading = false;
-					return Promise.reject(error);
-				});
 			},
 			watch : {
 				loading: function() {
@@ -500,7 +499,7 @@
 					console.log('ddddddd');
 				},
 				view : (view)=>{
-					vueModel.showLoading = true;
+					vueModel.loading = true;
 					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart'),axios.get('http://139.224.54.234:6001/lujinsuo/list')]
 						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view),axios.get('http://139.224.54.234:6001/lujinsuo/list?key=' + view)];
 					Promise.all(ps)
@@ -571,7 +570,7 @@
 						}).catch((err)=>{
 						console.log(err);
 					}).then(()=>{
-						vueModel.showLoading = false;
+						vueModel.loading = false;
 					});
 				}
 			}
