@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>登录</title>
+	<link rel="stylesheet" href="./static/iview.css">
+	<link rel="stylesheet" href="./static/login.css">
+	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
+</head>
+<body>
+	 <div class="login" @keydown.enter="handleSubmit" id="login">
+        <div class="login-con">
+            <Card :bordered="false">
+                <p slot="title">
+                    <Icon type="log-in"></Icon>
+                    欢迎登录
+                </p>
+                <div class="form-con">
+                    <i-form ref="loginForm" :model="form" :rules="rules">
+                        <form-item prop="userName">
+                            <i-input v-model="form.userName" placeholder="请输入用户名">
+                                <span slot="prepend">
+                                    <Icon :size="16" type="person"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item  >
+                        <form-item prop="password">
+                            <i-input type="password" v-model="form.password" placeholder="请输入密码">
+                                <span slot="prepend">
+                                    <Icon :size="14" type="locked"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item>
+                        <form-item>
+                            <i-button @click="handleSubmit" type="primary" long>登录</i-button>
+                        </form-item>
+                    </i-form>
+                    <p class="login-tip">输入任意用户名和密码即可</p>
+                </div>
+            </Card>
+        </div>
+    </div>
+	<script>
+		new Vue({
+			el: "#login",
+			data() {
+				return {
+					form: {
+						userName: 'admin',
+						password: ''
+					},
+					rules: {
+						userName: [
+							{ required: true, message: '账号不能为空', trigger: 'blur' }
+						],
+						password: [
+							{ required: true, message: '密码不能为空', trigger: 'blur' }
+						]
+					}
+				}
+			},
+			methods: {
+				handleSubmit() {
+					this.$refs.loginForm.validate((valid) => {
+						if (valid) {
+							window.location.href = "./index.html";
+						}
+					});
+				}
+			}
+		})
+	</script>
+</body>
+</html>
