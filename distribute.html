@@ -70,15 +70,39 @@
 										</Col>
 										<i-table height="320" :columns="tableColumns" :data="tableData" border disabled-hover v-else></i-table>
 										<Card :bordered="false" v-if="view === 'china'">
-											<p slot="title">全国汇总表格</p>
+											<p slot="title">门店类型</p>
 											<p>
-												<i-table :columns="tableHzColumns" :data="tableHzData" border disabled-hover ></i-table>
+												<checkbox-group v-model="saletype" @on-change="change">
+													<Checkbox :label="item.name" v-for="item in types"></Checkbox>
+												</checkbox-group>
 											</p>
 										</Card>
-										<Card :bordered="false" v-if="view !== 'china'">
-											<p slot="title">{{view}}利润率表格</p>
+										<Card>	
+											<p slot="title">test</p>
 											<p>
-												<i-table ref="table" :columns="editTableColumns" :data="tableRateData" border disabled-hover></i-table>
+												<div class="test">
+													<table v-if="complexData.length> 0">
+														<tbody>
+															<tr>
+																<td v-for="item in head" :colspan="item.colspan" :rowspan="item.rowspan">
+																{{item.name}}
+																</td>
+															</tr>
+															<tr>
+																<td v-for="item in col">
+																{{item.name}}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+													<table v-if="complexData.length> 0">
+														<tr v-for="item in complexData">
+															<td><input type="checkbox" name=""  v-model="item.checked"></td>
+															<td v-for="td in tds">{{item[td['key']]}}</td>
+														</tr>
+													</table>
+												</div>
+												
 											</p>
 										</Card>
 										<Card>
@@ -92,7 +116,6 @@
 												<Col span="3" class="padding-left-10">
 													<i-Button type="primary" size="small" @click="distribute()">调配</i-Button>
 												</Col>
-												
 											</Row>
 										</Card>
 										
@@ -449,7 +472,6 @@
 			data : {
 				view : '',
 				tableColumns: dataobj.tableColumns,
-				editTableColumns: dataobj.editTableColumns,
 				tableHzColumns:dataobj.tableHzColumns,
 				tableData: [],
 				tableHzData: [],
@@ -460,12 +482,27 @@
 				userName: 'admin',
 				isFullScreen: false,
 				avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
-				// 可编辑表格
-				columns: [],
-				thisTableData: [],
-				edittingStore: [],
-				editIncell: true,
-				hoverShow: true,
+				saletype: [],
+				//复合表头
+				defaultTd: [{key: 'name'}, {key: 'ds'}],
+				tds: [],
+				defaultHead: [{
+					name: '',
+					rowspan: 2,
+					colspan: 1
+					},{
+					name: '省份',
+					rowspan: 2,
+					colspan: 1
+					},{
+					name: '经销商',
+					rowspan: 2,
+					colspan: 1
+				}],
+				head: [] ,
+            	col: [],
+				complexData: [],
+				types: [{name:'大卖场', key: 'dmc', checked: false}, {name: '超市', key: 'cs', checked: false}]
 			},
 			computed: {
 				menuitemClasses () {
@@ -476,6 +513,67 @@
 				}
 			},
 			methods: {
+				change(items) {
+					this.col = [];
+					this.tds = this.defaultTd;
+					this.head = this.defaultHead;
+					var selected = [];
+					for(var i=0; i< items.length;i++) {
+						console.log('items[i]:', items[i]);
+						switch(items[i]) {
+							case '大卖场':
+							selected.push({
+								name: '大卖场',
+								key: 'dmc',
+								rowspan: 1,
+								colspan: 3
+							});
+							this.tds = this.tds.concat([
+								{key: 'mds'},{key: 'rate'},{key: 'value'}
+							]);
+							this.col = this.col.concat([
+								{
+								name: '门店数' 
+								}, {
+								name: '利润率',
+								}, {
+								name: '利润值'
+								}
+							]);
+							break;
+							case '超市':
+							selected.push({
+								name: '超市',
+								key: 'cs',
+								rowspan: 1,
+								colspan: 3
+							});
+							this.tds = this.tds.concat([
+								{key: 'mds'},{key: 'rate'},{key: 'value'}
+							]);
+							this.col = this.col.concat([
+								{
+									name: '门店数' 
+								}, {
+									name: '利润率',
+								}, {
+									name: '利润值'
+								}
+							]);
+							
+							break; 
+						}
+					}
+					if(items.length > 0) {
+						this.head = this.head.concat(selected); 
+						this.complexData = [
+							{checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+							{checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+						];
+					} else {
+						this.complexData = [];
+					}
+				},
 				handleClickUserDropdown() {
 
 				},
@@ -515,9 +613,7 @@
 					]
 				},
 				save() {},
-				distribute() {
-					window.open("./distribute.html")
-				}
+				distribute() {}
 			},
 			mounted() {
 				this.init();
@@ -535,9 +631,6 @@
 					console.log('ddddddd');
 				},
 				view : (view)=>{
-					if (view !== 'china' && view) {
-						vueModel.editTableInit(vueModel, dataobj.editTableColumns, dataobj.tableRateData);
-					}
 					vueModel.loading = true;
 					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart'),axios.get('http://139.224.54.234:6001/lujinsuo/list')]
 						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view),axios.get('http://139.224.54.234:6001/lujinsuo/list?key=' + view)];
@@ -636,6 +729,11 @@
 	}
 	.ivu-table-cell:hover .show-edit-btn{
 		display: inline-block;
+	}
+	.test td {
+		width: 80px;
+		text-align: center;
+		border: 1px solid gray;
 	}
 </style>
 </body>
