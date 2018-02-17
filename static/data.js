@@ -96,7 +96,7 @@ var dataobj = {
             title: '城市',
             align: 'center',
             key: 'city',
-            width: 200
+            width: 100
         },
         {
             title: '经销商',
@@ -107,28 +107,28 @@ var dataobj = {
         {
             title: '大卖场',
             align: 'center',
-            width: 100,
+            width: 120,
             key: 'sales',
             editable: true
         },
         {
             title: '大型超市',
             align: 'center',
-            width: 100,
+            width: 120,
             key: 'supermarket',
             editable: true
         },
         {
             title: '便利店',
             align: 'center',
-            width: 100,
+            width: 120,
             key: 'store',
             editable: true
         },
         {
             title: '中小超市',
             align: 'center',
-            width: 100,
+            width: 120,
             key: 'market',
             editable: true
         }
