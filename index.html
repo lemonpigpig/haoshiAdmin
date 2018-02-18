@@ -81,7 +81,7 @@
 												<i-table ref="table" :columns="editTableColumns" :data="tableRateData" border disabled-hover></i-table>
 											</p>
 										</Card>
-										<Card>
+										<Card v-if="this.view !== 'china'">
 											<Row :gutter="10" style="margin-top: 20px;">
 												<Col span="3" class="padding-left-10">
 													<i-Button type="primary" size="small" @click="save()">保存</i-Button>
@@ -479,27 +479,21 @@
 				handleClickUserDropdown() {
 
 				},
-				getNationTableList() {
-					axios.get(`http://139.224.54.234:6001/lujinsuo/list`).then(res=>{
-						console.log(res.data);
-						this.tableData = res.data;
-					}); 
-				},
-				getTableList(view) {
-					var url = view && view !== 'china' ? `http://139.224.54.234:6001/lujinsuo/list?key=${view}` :
-					'http://139.224.54.234:6001/lujinsuo/list';
-					;
-					axios.get(url).then(
-						res => {
-							this.tableData = res.data;
-						}
-					)
-				},
+				// getTableList(view) {
+				// 	var url = view && view !== 'china' ? `http://139.224.54.234:6001/lujinsuo/list?key=${view}` :
+				// 	'http://139.224.54.234:6001/lujinsuo/list';
+				// 	;
+				// 	axios.get(url).then(
+				// 		res => {
+				// 			this.tableData = res.data;
+				// 		}
+				// 	)
+				// },
 				init() {
 					mapChat = echarts.init(document.getElementById('data-map'));
 					mapChat.on('click',(params)=>{
 						vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
-						vueModel.getTableList(vueModel.view);
+						// vueModel.getTableList(vueModel.view);
 					});
 					this.view = 'china';
 					getChinaJson();
@@ -516,12 +510,13 @@
 				},
 				save() {},
 				distribute() {
-					window.open("./distribute.html")
+					console.log(this.view);
+					localStorage.setItem("provinceId", this.view);
+					window.open(`./distribute.html?id=${this.view}`);
 				}
 			},
 			mounted() {
 				this.init();
-				this.getTableList();
 				editTable.editTableInit(this);
 			},
 			watch : {
@@ -605,7 +600,7 @@
 							};
 							mapChat.setOption(option);
 
-							vueModel.salesDatas = data[2].data;
+							vueModel.tableData = data[2].data;
 						}).catch((err)=>{
 						console.log(err);
 					}).then(()=>{

@@ -51,25 +51,27 @@
 					</div>
 					<div class="single-page-con">
 						<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
-							<div id="data-map" style="width: 1024px; height: 468px;">
-							</div>
+							<row :gutter="10">
+								<i-col span="12">
+									<div id="data-map" style="width: 520px;height: 450px;">
+									</div>
+								</i-col>
+								<i-col span="12">
+									<div id="data-map-after" style="width: 500px;height: 450px;">
+									</div>
+								</i-col>
+							</row>
+							
 							<div id="container">
-								<Col class="demo-spin-col" span="8">
+								<i-col class="demo-spin-col" span="8">
 									<Spin fix v-if="loading">
 										<Icon type="load-c" size=18 class="demo-spin-icon-load"></Icon>
 										<div>Loading</div>
 									</Spin>
-								</Col>
+								</i-col>
 								<div id="data-table">
 									<row>
-										<Col class="demo-spin-col" span="8">
-											<Spin fix v-if="!tableData || tableData.length==0">
-												<Icon type="load-c" size=18 class="demo-spin-icon-load"></Icon>
-												<div>Loading</div>
-											</Spin>
-										</Col>
-										<i-table height="320" :columns="tableColumns" :data="tableData" border disabled-hover v-else></i-table>
-										<Card :bordered="false" v-if="view === 'china'">
+										<Card :bordered="false">
 											<p slot="title">门店类型</p>
 											<p>
 												<checkbox-group v-model="saletype" @on-change="change">
@@ -423,59 +425,13 @@
 			"澳门": {}
 		};
 		let mapChat = null;
-		function getChinaJson() {
-			axios.get(`http://139.224.54.234:6002/mapjson/china.json`)
-			.then((chinaData) =>{
-				let provinces = chinaData.data.features.map((p)=> p.properties.name);
-
-				return Promise.all(provinces.map((p)=> {
-					return Promise.all([axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(p)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + p)])
-						.then((pData) =>{
-							let sourceCities = pData[0].data.features.map((f)=> f.properties.name);
-							let targetCities = pData[1].data.map((f)=> f.name)
-
-							let notFound = [];
-							let mapping = targetCities.map((t)=>{
-								let re = new RegExp(t,'ig');
-								let found = sourceCities.find((s)=> re.test(s));
-								if(!found){
-									console.error(`${t} not found`);
-									notFound.push(t);
-									found = "" + t;
-								}
-								return [t,found];
-							});
-
-							return {
-								province : p,
-	//								sources : sourceCities,
-	//								targets : targetCities,
-									mapping : mapping,
-	//								notFound : notFound
-								}
-							});
-					}));
-				}).then((datas)=>{
-					let mapping = {};
-					datas.forEach((m)=>{
-						let cityMapping = {};
-						m.mapping.forEach((cm)=>{
-							cityMapping[cm[0]] = cm[1]
-						});
-						mapping[m.province] = cityMapping
-					});
-					// console.log(JSON.stringify(mapping,null,4));
-			});
-		}
+		let mapChatAfter = null;
 		let vueModel  = new Vue({
 			el: '#main',
 			data : {
 				view : '',
-				tableColumns: dataobj.tableColumns,
 				tableHzColumns:dataobj.tableHzColumns,
-				tableData: [],
 				tableHzData: [],
-				tableRateData: dataobj.tableRateData,
 				loading: loading,
 				currentPath: '',
 				shrink: false,
@@ -502,7 +458,7 @@
 				head: [] ,
             	col: [],
 				complexData: [],
-				types: [{name:'大卖场', key: 'dmc', checked: false}, {name: '超市', key: 'cs', checked: false}]
+				types: [{name:'大卖场'}, {name: '大型超市'}, {name: '便利店'}, {name: '中小超市'}]
 			},
 			computed: {
 				menuitemClasses () {
@@ -519,12 +475,10 @@
 					this.head = this.defaultHead;
 					var selected = [];
 					for(var i=0; i< items.length;i++) {
-						console.log('items[i]:', items[i]);
 						switch(items[i]) {
 							case '大卖场':
 							selected.push({
 								name: '大卖场',
-								key: 'dmc',
 								rowspan: 1,
 								colspan: 3
 							});
@@ -541,10 +495,49 @@
 								}
 							]);
 							break;
-							case '超市':
+							case '大型超市':
 							selected.push({
-								name: '超市',
-								key: 'cs',
+								name: '大型超市',
+								rowspan: 1,
+								colspan: 3
+							});
+							this.tds = this.tds.concat([
+								{key: 'mds'},{key: 'rate'},{key: 'value'}
+							]);
+							this.col = this.col.concat([
+								{
+									name: '门店数' 
+								}, {
+									name: '利润率',
+								}, {
+									name: '利润值'
+								}
+							]);
+							
+							break;
+							case '便利店':
+							selected.push({
+								name: '便利店',
+								rowspan: 1,
+								colspan: 3
+							});
+							this.tds = this.tds.concat([
+								{key: 'mds'},{key: 'rate'},{key: 'value'}
+							]);
+							this.col = this.col.concat([
+								{
+									name: '门店数' 
+								}, {
+									name: '利润率',
+								}, {
+									name: '利润值'
+								}
+							]);
+							
+							break; 
+							case '中小超市':
+							selected.push({
+								name: '中小超市',
 								rowspan: 1,
 								colspan: 3
 							});
@@ -577,30 +570,15 @@
 				handleClickUserDropdown() {
 
 				},
-				getNationTableList() {
-					axios.get(`http://139.224.54.234:6001/lujinsuo/list`).then(res=>{
-						console.log(res.data);
-						this.tableData = res.data;
-					}); 
-				},
-				getTableList(view) {
-					var url = view && view !== 'china' ? `http://139.224.54.234:6001/lujinsuo/list?key=${view}` :
-					'http://139.224.54.234:6001/lujinsuo/list';
-					;
-					axios.get(url).then(
-						res => {
-							this.tableData = res.data;
-						}
-					)
-				},
 				init() {
 					mapChat = echarts.init(document.getElementById('data-map'));
-					mapChat.on('click',(params)=>{
-						vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
-						vueModel.getTableList(vueModel.view);
-					});
-					this.view = 'china';
-					getChinaJson();
+					mapChatAfter = echarts.init(document.getElementById('data-map-after'));
+					// mapChat.on('click',(params)=>{
+					// 	vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
+					// });
+					// mapChatAfter.on()
+					this.view = localStorage.getItem("provinceId");
+					console.log("this.view:", this.view);
 					this.tableHzData = [
 						{
 							value: 111111111,
@@ -617,18 +595,10 @@
 			},
 			mounted() {
 				this.init();
-				this.getTableList();
-				editTable.editTableInit(this);
 			},
 			watch : {
-				tableRateData: function() {
-					console.log('tableRateData');
-				},
 				loading: function() {
 					console.log(this.loading);
-				},
-				tableData:function() {
-					console.log('ddddddd');
 				},
 				view : (view)=>{
 					vueModel.loading = true;
@@ -645,27 +615,10 @@
 							},null,4));
 							let option  = {
 								tooltip: {},
-								// visualMap: {
-								// 	type : 'piecewise',
-								// 	pieces : [
-								// 		{ min : -99 , max : 0 , color : 'grey'},
-								// 		{ min : 0 , max : 2 ,color : 'red' },
-								// 		{ min : 2 , max : 5 ,color : 'yellow'},
-								// 		{ min : 5 ,color : 'green'},
-								// 	]
-								// },
 								title: {
 									text: view === 'china' ? '中国' :view ,
 									subtext: '利润率',
 									left: 'left'
-								},
-								dataRange: {
-									min: -5,
-									max : 5,
-									text:['高','低'],           // 文本，默认为数值文本
-									calculable : true,
-									x: 'left',
-									color: ['orangered','yellow','lightskyblue', 'gray']
 								},
 								geo: {
 									map: view,
@@ -697,7 +650,7 @@
 								]
 							};
 							mapChat.setOption(option);
-
+							mapChatAfter.setOption(option);
 							vueModel.salesDatas = data[2].data;
 						}).catch((err)=>{
 						console.log(err);
@@ -734,6 +687,9 @@
 		width: 80px;
 		text-align: center;
 		border: 1px solid gray;
+	}
+	#data-map {
+		border-right: 1px solid gray;
 	}
 </style>
 </body>
