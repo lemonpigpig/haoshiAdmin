@@ -80,7 +80,7 @@
 											</p>
 										</Card>
 										<Card>	
-											<p slot="title">test</p>
+											<p slot="title">经销商列表</p>
 											<p>
 												<div class="test">
 													<table v-if="complexData.length> 0">
@@ -118,9 +118,39 @@
 												<Col span="3" class="padding-left-10">
 													<i-Button type="primary" size="small" @click="distribute()">调配</i-Button>
 												</Col>
+												<Col span="3" class="padding-left-10">
+													<i-Button type="primary" size="small" @click="distribute()">返回</i-Button>
+												</Col>
 											</Row>
 										</Card>
-										
+										<Card>	
+											<p slot="title">经销商列表调整后</p>
+											<p>
+												<div class="test">
+													<table v-if="complexData.length> 0">
+														<tbody>
+															<tr>
+																<td v-for="item in head" :colspan="item.colspan" :rowspan="item.rowspan">
+																{{item.name}}
+																</td>
+															</tr>
+															<tr>
+																<td v-for="item in col">
+																{{item.name}}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+													<table v-if="complexData.length> 0">
+														<tr v-for="item in complexData">
+															<td><input type="checkbox" name=""  v-model="item.checked"></td>
+															<td v-for="td in tds">{{item[td['key']]}}</td>
+														</tr>
+													</table>
+												</div>
+												
+											</p>
+										</Card>
 									</row>
 								</div>
 							</div>
