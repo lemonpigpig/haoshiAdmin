@@ -168,6 +168,13 @@
 				</layout>
 			</layout>
 		</div>
+		<modal
+			v-model="showTips"
+			title="右边经销商只能选择一条记录进行调整"
+			@on-ok="ok"
+			@on-cancel="cancel">
+			<p>右边经销商只能选择一条记录进行调整</p>
+		</modal>
 	</div>
 	
 	<script>
@@ -497,7 +504,8 @@
             	col: [],
 				complexData: [],
 				complexDataAfter: [],
-				types: [{name:'大卖场'}, {name: '大型超市'}, {name: '便利店'}, {name: '中小超市'}]
+				types: [{name:'大卖场'}, {name: '大型超市'}, {name: '便利店'}, {name: '中小超市'}],
+				showTips: false
 			},
 			computed: {
 				menuitemClasses () {
@@ -508,6 +516,12 @@
 				}
 			},
 			methods: {
+				ok () {
+					this.$Message.info('Clicked ok');
+				},
+				cancel () {
+					this.$Message.info('Clicked cancel');
+				},
 				change(items) {
 					this.col = [];
 					this.tds = this.defaultTd;
@@ -629,7 +643,24 @@
 					]
 				},
 				save() {},
-				distribute() {}
+				distribute() {
+					if(this.distributeCheck()) {
+						this.tableDataAddjust();
+					}
+				},
+				distributeCheck() {
+					var arr = this.complexDataAfter.filter(item => {
+						return item.checked
+					});
+					if(arr.length > 1) {
+						this.showTips = true;
+						return false;
+					}
+					return true;
+				},
+				tableDataAddjust() {
+					
+				}
 			},
 			mounted() {
 				this.init();
