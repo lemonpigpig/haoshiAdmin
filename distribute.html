@@ -53,18 +53,18 @@
 						<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
 							<row :gutter="10">
 								<i-col span="12">
-									<div id="data-map" style="width: 520px;height: 450px;">
+									<div id="data-map" style="width: 520px;height: 400px;">
 									</div>
 								</i-col>
 								<i-col span="12">
-									<div id="data-map-after" style="width: 500px;height: 450px;">
+									<div id="data-map-after" style="width: 500px;height: 400px;">
 									</div>
 								</i-col>
 							</row>
 							
 							<div id="container">
-								<i-col class="demo-spin-col" span="8">
-									<Spin fix v-if="loading">
+								<i-col class="demo-spin-col" span="8" v-if="loading">
+									<Spin fix>
 										<Icon type="load-c" size=18 class="demo-spin-icon-load"></Icon>
 										<div>Loading</div>
 									</Spin>
@@ -79,6 +79,10 @@
 												</checkbox-group>
 											</p>
 										</Card>
+									</row>
+								</div>
+								<row>
+									<i-col span="12">
 										<Card>	
 											<p slot="title">经销商列表</p>
 											<p>
@@ -107,22 +111,8 @@
 												
 											</p>
 										</Card>
-										<Card>
-											<Row :gutter="10" style="margin-top: 20px;">
-												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small" @click="save()">保存</i-Button>
-												</Col>
-												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small">重置</i-Button>
-												</Col>
-												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small" @click="distribute()">调配</i-Button>
-												</Col>
-												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small" @click="distribute()">返回</i-Button>
-												</Col>
-											</Row>
-										</Card>
+									</i-col>
+									<i-col span="12">
 										<Card>	
 											<p slot="title">经销商列表调整后</p>
 											<p>
@@ -151,8 +141,26 @@
 												
 											</p>
 										</Card>
-									</row>
-								</div>
+									</i-col>
+								</row>
+								<row>
+									<Card>
+										<Row :gutter="10" style="margin-top: 20px;">
+											<Col span="3" class="padding-left-10">
+												<i-Button type="primary" size="small" @click="save()">保存</i-Button>
+											</Col>
+											<Col span="3" class="padding-left-10">
+												<i-Button type="primary" size="small">重置</i-Button>
+											</Col>
+											<Col span="3" class="padding-left-10">
+												<i-Button type="primary" size="small" @click="distribute()">调配</i-Button>
+											</Col>
+											<Col span="3" class="padding-left-10">
+												<i-Button type="primary" size="small" @click="distribute()">返回</i-Button>
+											</Col>
+										</Row>
+									</Card>
+								</row>
 							</div>
 						</i-content>
 					</div>
