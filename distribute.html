@@ -117,7 +117,7 @@
 											<p slot="title">经销商列表调整后</p>
 											<p>
 												<div class="test">
-													<table v-if="complexData.length> 0">
+													<table v-if="complexDataAfter.length> 0">
 														<tbody>
 															<tr>
 																<td v-for="item in head" :colspan="item.colspan" :rowspan="item.rowspan">
@@ -131,8 +131,8 @@
 															</tr>
 														</tbody>
 													</table>
-													<table v-if="complexData.length> 0">
-														<tr v-for="item in complexData">
+													<table v-if="complexDataAfter.length> 0">
+														<tr v-for="item in complexDataAfter">
 															<td><input type="checkbox" name=""  v-model="item.checked"></td>
 															<td v-for="td in tds">{{item[td['key']]}}</td>
 														</tr>
@@ -496,6 +496,7 @@
 				head: [] ,
             	col: [],
 				complexData: [],
+				complexDataAfter: [],
 				types: [{name:'大卖场'}, {name: '大型超市'}, {name: '便利店'}, {name: '中小超市'}]
 			},
 			computed: {
@@ -597,12 +598,15 @@
 					}
 					if(items.length > 0) {
 						this.head = this.head.concat(selected); 
-						this.complexData = [
+						var data = [
 							{checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
 							{checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
 						];
+						this.complexData = JSON.parse(JSON.stringify(data));
+						this.complexDataAfter = JSON.parse(JSON.stringify(data));
 					} else {
 						this.complexData = [];
+						this.complexDataAfter = [];
 					}
 				},
 				handleClickUserDropdown() {
@@ -611,10 +615,6 @@
 				init() {
 					mapChat = echarts.init(document.getElementById('data-map'));
 					mapChatAfter = echarts.init(document.getElementById('data-map-after'));
-					// mapChat.on('click',(params)=>{
-					// 	vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
-					// });
-					// mapChatAfter.on()
 					this.view = localStorage.getItem("provinceId");
 					console.log("this.view:", this.view);
 					this.tableHzData = [
@@ -638,19 +638,25 @@
 				loading: function() {
 					console.log(this.loading);
 				},
+				complexData: {
+					handler(val, old) {
+						console.log(val, old);
+					},
+					deep: true
+				},
+				complexDataAfter: {
+					handler(val, old) {
+						console.log(val, old);
+					},
+					deep: true
+				},
 				view : (view)=>{
 					vueModel.loading = true;
-					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart'),axios.get('http://139.224.54.234:6001/lujinsuo/list')]
-						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view),axios.get('http://139.224.54.234:6001/lujinsuo/list?key=' + view)];
+					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart')]
+						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view)];
 					Promise.all(ps)
 						.then((data)=>{
-
 							echarts.registerMap(view, data[0].data);
-							console.log(JSON.stringify({
-								province : view,
-								targetCities :data[0].data.features.map((f)=> f.properties.name),
-								sourceCities : data[1].data.map((f)=> f.name)
-							},null,4));
 							let option  = {
 								tooltip: {},
 								title: {
@@ -667,8 +673,9 @@
 								},
 								series : [
 									{
-										name: 'profit',
+										name: view,
 										type: 'map',
+										zoom: 1.5,
 										geoIndex: 0,
 										tooltip: {
 											show: true,
@@ -678,6 +685,7 @@
 											}
 										},
 										data: data[1].data.map((c)=> {
+											console.log(c);
 											let mapping = cityMap[view];
 											if(mapping && mapping[c.name]){
 												c.name = mapping[c.name];
@@ -689,7 +697,6 @@
 							};
 							mapChat.setOption(option);
 							mapChatAfter.setOption(option);
-							vueModel.salesDatas = data[2].data;
 						}).catch((err)=>{
 						console.log(err);
 					}).then(()=>{
