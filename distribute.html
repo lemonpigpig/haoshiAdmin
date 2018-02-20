@@ -524,6 +524,10 @@
 					this.$Message.info('Clicked cancel');
 				},
 				change(items) {
+					this.mapSelectedAdjust();
+					this.generateComplexTable(items);
+				},
+				generateComplexTable(items) {
 					this.col = [];
 					this.tds = this.defaultTd;
 					this.head = this.defaultHead;
@@ -647,7 +651,7 @@
 				distribute() {
 					if(this.distributeCheck()) {
 						this.tableDataAdjust();
-						this.mapDataAdjust();
+						this.mapSelectedAdjust();
 					}
 				},
 				distributeCheck() {
@@ -696,8 +700,8 @@
 					}
 					
 				},
-				mapDataAdjust() {
-
+				mapSelectedAdjust() {
+					// setOption selected: true
 				}
 			},
 			mounted() {
