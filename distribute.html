@@ -172,7 +172,8 @@
 			v-model="showTips"
 			title="右边经销商只能选择一条记录进行调整"
 			@on-ok="ok"
-			@on-cancel="cancel">
+			@on-cancel="cancel"
+			class-name="vertical-center-modal">
 			<p>右边经销商只能选择一条记录进行调整</p>
 		</modal>
 	</div>
@@ -613,8 +614,8 @@
 					if(items.length > 0) {
 						this.head = this.head.concat(selected); 
 						var data = [
-							{checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
-							{checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+							{id: 0, checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+							{id: 1, checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
 						];
 						this.complexData = JSON.parse(JSON.stringify(data));
 						this.complexDataAfter = JSON.parse(JSON.stringify(data));
@@ -645,30 +646,64 @@
 				save() {},
 				distribute() {
 					if(this.distributeCheck()) {
-						this.tableDataAddjust();
+						this.tableDataAdjust();
+						this.mapDataAdjust();
 					}
 				},
 				distributeCheck() {
-					var arr = this.complexDataAfter.filter(item => {
+					var arr = this.complexData.filter(item => {
 						return item.checked
 					});
-					if(arr.length > 1) {
-						this.showTips = true;
+					var arr1 = this.complexDataAfter.filter(item => {
+						return item.checked
+					});
+					if(arr.length > 0) {
+						if(arr1.length > 1) {
+							this.showTips = true;
+							return false;
+						}
+						return true;
+					} else {
 						return false;
 					}
-					return true;
 				},
-				tableDataAddjust() {
+				tableDataAdjust() {
+					var selected = JSON.parse(JSON.stringify(this.complexData.filter(item => item.checked && item.mds)));
+					var adjustedSelected = JSON.parse(JSON.stringify(this.complexDataAfter.filter(item => item.checked)));
+					if(adjustedSelected && adjustedSelected.length) {
+						var mds = selected.reduce((pre, item) => {
+							return pre+item.mds;
+						}, 0);
+						var rate = selected.reduce((pre, item) => {
+							return pre+parseFloat(item.rate.split("%")[0]);
+						}, 0);
+						var value = selected.reduce((pre, item) => {
+							return pre+item.value;
+						}, 0);
+						mds = parseFloat(adjustedSelected[0].mds) + mds;
+						rate = parseFloat(adjustedSelected[0].rate.split("%")[0]) + rate;
+						value = parseFloat(adjustedSelected[0].value) + value;
+						selected.forEach((item) => {
+							var i = item.id;
+							var selectedIndex = adjustedSelected[0].id;
+							Vue.set(this.complexData[i], 'mds', 0);
+							Vue.set(this.complexData[i], 'rate', 0);
+							Vue.set(this.complexData[i], 'value', 0);
+							Vue.set(this.complexDataAfter[selectedIndex], 'mds', mds);
+							Vue.set(this.complexDataAfter[selectedIndex], 'rate', `${rate}%`);
+							Vue.set(this.complexDataAfter[selectedIndex], 'value', value.toFixed(2));
+						});
+					}
 					
+				},
+				mapDataAdjust() {
+
 				}
 			},
 			mounted() {
 				this.init();
 			},
 			watch : {
-				loading: function() {
-					console.log(this.loading);
-				},
 				complexData: {
 					handler(val, old) {
 						console.log(val, old);
@@ -689,42 +724,39 @@
 						.then((data)=>{
 							echarts.registerMap(view, data[0].data);
 							let option  = {
-								tooltip: {},
-								title: {
-									text: view === 'china' ? '中国' :view ,
-									subtext: '利润率',
-									left: 'left'
-								},
-								geo: {
-									map: view,
-//									roam: true,
-									label : {
-										show : true
-									}
-								},
-								series : [
-									{
-										name: view,
-										type: 'map',
-										zoom: 1.5,
-										geoIndex: 0,
-										tooltip: {
-											show: true,
-											formatter : (params) =>{
-//												console.log(params);
-												return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
-											}
-										},
-										data: data[1].data.map((c)=> {
-											console.log(c);
-											let mapping = cityMap[view];
-											if(mapping && mapping[c.name]){
-												c.name = mapping[c.name];
-											}
-											return c;
-										})
-									}
-								]
+									tooltip: {},
+									title: {
+										text: view === 'china' ? '中国' :view ,
+										subtext: '利润率',
+										left: 'left'
+									},
+									geo: {
+										map: view,
+										label : {
+											show : true
+										}
+									},
+									series : [
+										{
+											name: view,
+											type: 'map',
+											zoom: 1.5,
+											geoIndex: 0,
+											tooltip: {
+												show: true,
+												formatter : (params) =>{
+													return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+												}
+											},
+											data: data[1].data.map((c)=> {
+												let mapping = cityMap[view];
+												if(mapping && mapping[c.name]){
+													c.name = mapping[c.name];
+												}
+												return c;
+											})
+										}
+									]
 							};
 							mapChat.setOption(option);
 							mapChatAfter.setOption(option);
@@ -767,6 +799,11 @@
 	#data-map {
 		border-right: 1px solid gray;
 	}
+	 .vertical-center-modal{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+	 }
 </style>
 </body>
 </html>
