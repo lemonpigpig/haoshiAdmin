@@ -22,10 +22,14 @@
 					<div class="logo-con">
 						<img src="./static/logo.jpg">
 					</div>
-					<i-menu active-name="1" theme="dark" width="auto">
+					<i-menu active-name="1" theme="dark" width="auto" @on-select="selectMenu">
 						<menu-item name="1">
 							<icon type="ios-navigate"></icon>
 							<span>经销商调配</span>
+						</menu-item>
+						<menu-item name="2">
+							<icon type="ios-navigate"></icon>
+							<span>用户管理</span>
 						</menu-item>
 					</i-menu>
 				</sider>
@@ -476,6 +480,14 @@
 				}
 			},
 			methods: {
+				selectMenu(name) {
+					if (name == 1) {
+						window.open("./index.html");
+					}
+					if (name == 2) {
+						window.open("./user.html");
+					}
+				},
 				handleClickUserDropdown() {
 
 				},
