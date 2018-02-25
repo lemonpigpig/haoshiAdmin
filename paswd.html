@@ -2,22 +2,20 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>登录</title>
+	<title>修改密码</title>
 	<link rel="stylesheet" href="./static/iview.css">
 	<link rel="stylesheet" href="./static/login.css">
 	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
 	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
-	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
-	
 </head>
 <body>
-	 <div class="login" @keydown.enter="handleSubmit" id="login">
+	 <div class="login" @keydown.enter="handleSubmit" id="pawsd" v-cloak>
         <div class="login-con">
             <Card :bordered="false">
                 <p slot="title">
                     <Icon type="log-in"></Icon>
-                    欢迎登录
+                    修改密码
                 </p>
                 <div class="form-con">
                     <i-form ref="loginForm" :model="form" :rules="rules">
@@ -28,15 +26,23 @@
                                 </span>
                             </i-input>
                         </form-item  >
-                        <form-item prop="password">
-                            <i-input type="password" v-model="form.password" placeholder="请输入密码">
+                        <form-item prop="oldPaswd" v-if="!isMaster">
+                            <i-input type="password" v-model="form.oldPaswd" placeholder="请输入旧密码">
                                 <span slot="prepend">
                                     <Icon :size="14" type="locked"></Icon>
                                 </span>
                             </i-input>
                         </form-item>
+						 <form-item prop="password">
+                            <i-input type="password" v-model="form.password" placeholder="请输入新密码">
+                                <span slot="prepend">
+                                    <Icon :size="14" type="locked"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item>
+						
                         <form-item>
-                            <i-button @click="handleSubmit" type="primary" long>登录</i-button>
+                            <i-button @click="handleSubmit" type="primary" long>确定</i-button>
                         </form-item>
                     </i-form>
                 </div>
@@ -45,19 +51,24 @@
     </div>
 	<script>
 		new Vue({
-			el: "#login",
+			el: "#pawsd",
 			data() {
 				return {
+					isMaster: false,
 					form: {
 						userName: '',
+						oldPaswd: '',
 						password: ''
 					},
 					rules: {
 						userName: [
 							{ required: true, message: '账号不能为空', trigger: 'blur' }
 						],
+						oldPaswd: [
+							{ required: true, message: '旧密码不能为空', trigger: 'blur' }
+						],
 						password: [
-							{ required: true, message: '密码不能为空', trigger: 'blur' }
+							{ required: true, message: '新密码不能为空', trigger: 'blur' }
 						]
 					}
 				}
@@ -65,31 +76,8 @@
 			methods: {
 				handleSubmit() {
 					this.$refs.loginForm.validate((valid) => {
-						// /users/login
 						if (valid) {
-							console.log("valid:", this.form.userName, this.form.password);
-							// axios.post("http://139.224.54.234:1668/users/login", JSON.stringify({
-							// 	userName: this.form.userName,
-							// 	password: this.form.password
-							// }))
-							$.ajax({
-								contentType: 'application/json;charset=UTF-8',
-								type: 'POST',
-								url: 'http://139.224.54.234:1668/users/login',
-								data: {userName: this.form.userName,password: this.form.password},
-								dataType: 'json',
-								success: (res) => {
-									localStorage.setItem("userinfo", JSON.stringify(res.data));
-									console.log(res);
-								},
-								err: (err => {
-									console.log("error:", err);
-								})		
-							})
-							// .then((data) => {
-							// 	console.log(data);
-							// });
-							// window.location.href = "./index.html";
+							window.location.href = "./login.html";
 						}
 					});
 				}

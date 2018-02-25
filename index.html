@@ -27,7 +27,7 @@
 							<icon type="ios-navigate"></icon>
 							<span>经销商调配</span>
 						</menu-item>
-						<menu-item name="2">
+						<menu-item name="2" v-if="isMaster">
 							<icon type="ios-navigate"></icon>
 							<span>用户管理</span>
 						</menu-item>
@@ -451,6 +451,7 @@
 		let vueModel  = new Vue({
 			el: '#main',
 			data : {
+				isMaster: null,
 				view : '',
 				tableColumns: dataobj.tableColumns,
 				editTableColumns: dataobj.editTableColumns,
@@ -528,6 +529,7 @@
 				}
 			},
 			mounted() {
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : true;
 				this.init();
 				editTable.editTableInit(this);
 			},
