@@ -8,7 +8,6 @@
 	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
 	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
-	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
 	
 </head>
 <body>
@@ -44,6 +43,16 @@
         </div>
     </div>
 	<script>
+		axios.interceptors.request.use(function (config) {
+			config.headers['Content-Type'] = 'application/json';
+			// 在发送请求之前做些什么
+			return config;
+		}, function (error) {
+			// 对请求错误做些什么
+			return Promise.reject(error);
+		});
+	</script>
+	<script>
 		new Vue({
 			el: "#login",
 			data() {
@@ -65,31 +74,22 @@
 			methods: {
 				handleSubmit() {
 					this.$refs.loginForm.validate((valid) => {
-						// /users/login
 						if (valid) {
-							console.log("valid:", this.form.userName, this.form.password);
-							// axios.post("http://139.224.54.234:1668/users/login", JSON.stringify({
-							// 	userName: this.form.userName,
-							// 	password: this.form.password
-							// }))
-							$.ajax({
-								contentType: 'application/json;charset=UTF-8',
-								type: 'POST',
-								url: 'http://139.224.54.234:1668/users/login',
-								data: {userName: this.form.userName,password: this.form.password},
-								dataType: 'json',
-								success: (res) => {
-									localStorage.setItem("userinfo", JSON.stringify(res.data));
-									console.log(res);
-								},
-								err: (err => {
-									console.log("error:", err);
-								})		
+							axios.post("/users/login", {
+								userName: this.form.userName,
+								password: this.form.password
 							})
-							// .then((data) => {
-							// 	console.log(data);
-							// });
-							// window.location.href = "./index.html";
+							.then((res) => {
+								console.log(res.data);
+								if(res.data.code == 200) {
+									window.location.href = "./index.html";
+									localStorage.setItem("userinfo", JSON.stringify(res.data.data));
+								} else if(res.data.code == 100) {
+									this.$Message.info(res.data.msg);
+								}
+							
+							});
+							
 						}
 					});
 				}

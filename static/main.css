@@ -10,6 +10,11 @@ html,body{
     background: #f0f0f0;
     overflow: hidden;
 }
+li {
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+}
 .vertical-center-modal{
     display: flex;
     align-items: center;

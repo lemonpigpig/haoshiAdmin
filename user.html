@@ -3,13 +3,13 @@
 <head>
 	<meta charset="UTF-8">
 	<title>用户</title>
-	<link rel="stylesheet" href="./static/main.css">
-	<link rel="stylesheet" href="./static/iview.css">
-	<link rel="stylesheet" href="./static/login.css">
+	<link rel="stylesheet" href="/static/main.css">
+	<link rel="stylesheet" href="/static/iview.css">
+	<link rel="stylesheet" href="/static/login.css">
 	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
 	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
-	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+	<script src="/static/service.js"></script>
 </head>
 <body>
 	 <div class="user" id="user" v-cloak>
@@ -116,32 +116,6 @@
 		<h2 v-else>只有系统管理员才能访问该页面</h2>
 		
     </div>
-	<script>	
-		// 添加请求拦截器
-		axios.interceptors.request.use(function (config) {
-			config.headers.token = '123';
-			// 在发送请求之前做些什么
-			return config;
-		}, function (error) {
-			// 对请求错误做些什么
-			return Promise.reject(error);
-		});
-
-		// 添加响应拦截器
-		axios.interceptors.response.use(function (response) {
-			// 对响应数据做点什么
-			console.log(response);
-			return response;
-		}, function (error) {
-			console.log(error.response);
-			var response = error.response;
-			if(response && response.status === 401) {
-				// window.location.href = "./login.html?from=user.html";
-			}
-			// 对响应错误做点什么
-			return Promise.reject(error);
-		});
-	</script>
 	<script>
 		new Vue({
 			el: "#user",
@@ -208,8 +182,7 @@
 								return h('div',
 									params.row.permissions.map((item) => {
 										return [
-											h('strong', item.permissionName),
-											h('span', {style:{paddingRight: '10px'}}, '')
+											h('li', item.permissionName),
 										];
 									})
 								);
@@ -240,21 +213,15 @@
 						}
 					],
 					tableList: [
-						{
-							userName: 'John Brown',
-							password: 12345,
-							mobile: 1851655121,
-							realName: '真实姓名',
-							permissions: [{id:1, permissionName:"北京"}, {id:3, permissionName:"上海/四川"}]
-						}
 					],
-					userName: 'admin',
+					userName: '',
 					isFullScreen: false,
 					avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
 					};
 			},
 			mounted() {
-				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : true;
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
 				this.getData();
 				// console.log(123);
 			},
@@ -267,32 +234,16 @@
 					this.permissionNames = [];
 				},
 				getData() {
-					axios.get(`http://139.224.54.234:1668/users/search`)
+					axios.get(`/users/search`)
 					.then((res) => {
-						this.tableList = res.data;
+						if(res.data.code == 200) {
+							this.tableList = res.data.data;
+						}
 					});
-					axios.get(`http://139.224.54.234:1668/users/permission`)
+					axios.get(`/users/permission`)
 					.then((res) => {
 						this.form.permissionList = res.data.data;
 					});
-					// $.ajax({
-					// 		type: 'get',
-					// 		url: "http://139.224.54.234:1668/users/search",
-					// 		dataType: 'json',
-					// 		success: (res) => {
-					// 			console.log(res);
-					// 		},
-					// 		err: (err) => {
-					// 			console.log(err);
-					// 		},
-					// 		complete: (err) => {
-					// 			console.log(err)
-					// 		},
-					// 		// beforeSend: function(request) {
-					// 		// 	var userinfo = localStorage.getItem("userinfo");         
-					// 		// 	request.setRequestHeader('token', userinfo ? JSON.parse(userinfo).token : '');
-					// 		// },
-					// 	});
 				},
 				selectMenu(name) {
 					if (name == 1) {
@@ -319,37 +270,37 @@
 				},
 				addOk() {
 					var data = {
-						"id": this.isEdit ? 1 : 0,
+						"id": this.isEdit ? this.isEdit : 0,
 						"userName": this.form.userName,
 						"password": this.form.password,
 						"realName": this.form.realName,
 						"mobile": this.form.mobile,
 						"permissions": this.permissionNames
 					};
-					console.log(data);
-					axios.post(`http://139.224.54.234:1668/users/add-edit`, data)
+					axios.post(`/users/add-edit`, data)
 					.then((res) => {
-						this.addModal = false;
+						if(res.data.code == 200) {
+							this.addModal = false;
+							this.getData();
+							this.$Message.info('操纵成功');
+						} else {
+							this.addModal = false;
+							this.$Message.info(res.data.msg);
+						}
+
+						
 					});
-					this.addModal = false;
-					// window.location.reload(true);
-					// this.$Message.info('Clicked ok');
+					
 				},
 				addCancel() {},
 				add() {
+					this.isEdit = false;
 					this.addModal = true;
 					this.title = `新增用户`;
 					this.reset();
 				},
-				handleSubmit() {
-					this.$refs.addForm.validate((valid) => {
-						if (valid) {
-							window.location.href = "./user.html";
-						}
-					});
-				},
 				edit(item, type) {
-					this.isEdit = true;
+					this.isEdit = item.row.id;
 					this.addModal = true;
 					this.form.userName = item.row.userName;
 					this.form.password = item.row.password;
