@@ -1,5 +1,5 @@
+
 // 添加请求拦截器
-console.log('lalala');
 axios.interceptors.request.use(function (config) {
     config.headers.token = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).token : '';
     config.headers['Content-Type'] = 'application/json';

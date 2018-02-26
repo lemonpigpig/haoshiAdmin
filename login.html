@@ -8,6 +8,7 @@
 	<script src="static/lib/vue/2.5.13/vue.min.js"></script>
 	<script src="static/lib/axios/0.17.1/axios.min.js"></script>
 	<script src="static/lib/iview/2.9.2/iview.min.js"></script>
+	<script src="static/service.js"></script>
 	
 </head>
 <body>
@@ -42,16 +43,6 @@
             </Card>
         </div>
     </div>
-	<script>
-		axios.interceptors.request.use(function (config) {
-			config.headers['Content-Type'] = 'application/json';
-			// 在发送请求之前做些什么
-			return config;
-		}, function (error) {
-			// 对请求错误做些什么
-			return Promise.reject(error);
-		});
-	</script>
 	<script>
 		new Vue({
 			el: "#login",
