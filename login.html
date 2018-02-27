@@ -73,9 +73,14 @@
 							.then((res) => {
 								console.log(res.data);
 								if(res.data.code == 200) {
-									window.location.href = "./index.html";
 									localStorage.setItem("userinfo", JSON.stringify(res.data.data));
-								} else if(res.data.code == 100) {
+									if(res.data.data.status === 1) {
+										window.location.href = "paswd.html";	
+									} else {
+										window.location.href = "index.html";
+									}
+									
+								} else {
 									this.$Message.info(res.data.msg);
 								}
 							

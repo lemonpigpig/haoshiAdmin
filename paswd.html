@@ -77,7 +77,19 @@
 				handleSubmit() {
 					this.$refs.loginForm.validate((valid) => {
 						if (valid) {
-							window.location.href = "./login.html";
+							axios.post(`/users/edit-password`, {
+								"userName": this.form.userName,
+								"oldPassword": this.form.oldPaswd,
+								"newPassword": this.form.password
+							})
+							.then((res) => {
+								if(res.data.code == 200) {
+									window.location.href = "index.html";
+								} else {
+									this.$Message.info(res.data.msg);
+								}
+							})
+							
 						}
 					});
 				}
