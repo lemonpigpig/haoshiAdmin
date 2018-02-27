@@ -237,7 +237,9 @@
 					axios.get(`/users/search`)
 					.then((res) => {
 						if(res.data.code == 200) {
-							this.tableList = res.data.data;
+							if(res.data.data) {
+								this.tableList = res.data.data;
+							}
 						}
 					});
 					axios.get(`/users/permission`)
