@@ -12,7 +12,6 @@
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
 	<script src="./static/data.js" type="text/javascript"> </script>
 	<script src="./static/editTable.js"></script>
-	<script src="./template.js"></script>
 	
 </head>
 <body>
@@ -498,16 +497,6 @@
 				handleClickUserDropdown() {
 
 				},
-				// getTableList(view) {
-				// 	var url = view && view !== 'china' ? `http://139.224.54.234:6001/lujinsuo/list?key=${view}` :
-				// 	'http://139.224.54.234:6001/lujinsuo/list';
-				// 	;
-				// 	axios.get(url).then(
-				// 		res => {
-				// 			this.tableData = res.data;
-				// 		}
-				// 	)
-				// },
 				init() {
 					mapChat = echarts.init(document.getElementById('data-map'));
 					mapChat.on('click',(params)=>{
