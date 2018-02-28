@@ -3,8 +3,7 @@ var dataobj = {
         {
             title: '总利润值',
             align: 'center',
-            key: 'totalProfitValue',
-            width: 100
+            key: 'totalProfitValue'
         },
         {
             title: '总利润率',
@@ -22,19 +21,19 @@ var dataobj = {
             title: 'DT数量(P.>5%)',
             align: 'center',
             key: 'dtFiveMoreCount',
-            width: 80
+            width: 180
         },
         {
             title: 'DT数量(2%<P.<5%)',
             align: 'center',
             key: 'dtTwoMoreCount',
-            width: 80
+            width: 180
         },
          {
             title: 'DT数量(P.<5%)',
             align: 'center',
             key: 'dtZeroMoreCount',
-            width: 80
+            width: 180
         }
     ],
     tableColumns: [
@@ -42,7 +41,6 @@ var dataobj = {
             title: '省份',
             align: 'center',
             key: 'province',
-            width: 100
         },
         {
             title: '城市',
@@ -89,8 +87,7 @@ var dataobj = {
         {
             title: '省份',
             align: 'center',
-            key: 'province',
-            width: 100
+            key: 'province'
         },
         {
             title: '城市',
