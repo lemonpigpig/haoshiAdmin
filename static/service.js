@@ -1,9 +1,8 @@
-
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {
+    // config.url = `/api${config.url}`;
     config.headers.token = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).token : '';
     config.headers['Content-Type'] = 'application/json';
-    console.log("token:", config.headers.token)
     // 在发送请求之前做些什么
     return config;
 }, function (error) {
@@ -21,7 +20,7 @@ axios.interceptors.response.use(function (response) {
     var response = error.response;
     if(response) {
         if (response.status === 401) {
-            window.location.href = "./login.html";
+            window.location.href = "login.html";
         } else {
             console.log(response);
         }
