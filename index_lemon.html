@@ -515,7 +515,8 @@
 					supperMarketProfit: null,
 					hyperMarketProfit: null,
 					id: 0,
-					littlearea: ''
+					littlearea: '',
+					index: null
 				}
 
 			},
@@ -554,10 +555,7 @@
 				}
 			},
 			methods: {
-				editCancel() {
-
-				},
-				editOk() {
+				adjust() {
 					axios.post(`/province-view/profit-adjust`, JSON.stringify(this.form))
 					.then(res => {
 						this.editModal = false;
@@ -570,7 +568,17 @@
 						} else {
 							this.$Message.info(res.data.msg);
 						}
-					})
+					});
+				},
+				editCancel() {
+
+				},
+				editOk() {
+					Vue.set(this.tableRateData[this.form.index], 'marketProfit', this.form.marketProfit);
+					Vue.set(this.tableRateData[this.form.index], 'storeProfit', this.form.storeProfit);
+					Vue.set(this.tableRateData[this.form.index], 'supperMarketProfit', this.form.supperMarketProfit);
+					Vue.set(this.tableRateData[this.form.index], 'hyperMarketProfit', this.form.hyperMarketProfit);
+					this.editModal = false;
 				},
 				edit(data) {
 					this.editModal = true;
@@ -580,7 +588,7 @@
 					this.form.hyperMarketProfit = data.row.hyperMarketProfit;
 					this.form.id = data.row.id;
 					this.form.littlearea = data.row.littlearea;
-					console.log(data);
+					this.form.index = data.index;
 				},
 				selectMenu(name) {
 					if (name == 1) {
