@@ -89,13 +89,13 @@
 										<Card v-if="this.view !== 'china'">
 											<Row :gutter="10" style="margin-top: 20px;">
 												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small" @click="save()">保存</i-Button>
+													<i-Button type="primary" size="small" @click="adjust">保存</i-Button>
 												</Col>
 												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small">重置</i-Button>
+													<i-Button type="primary" size="small" @click="reset">重置</i-Button>
 												</Col>
 												<Col span="3" class="padding-left-10">
-													<i-Button type="primary" size="small" @click="distribute()">调配</i-Button>
+													<i-Button type="primary" size="small" @click="distribute">调配</i-Button>
 												</Col>
 												
 											</Row>
@@ -517,7 +517,8 @@
 					id: 0,
 					littlearea: '',
 					index: null
-				}
+				},
+				editedList: []
 
 			},
 			computed: {
@@ -556,7 +557,22 @@
 			},
 			methods: {
 				adjust() {
-					axios.post(`/province-view/profit-adjust`, JSON.stringify(this.form))
+					var editedList = Array.from(new Set(this.editedList));
+					var editModel = [];
+					editModel = this.tableRateData.filter(item => {
+						return editedList.indexOf(item.id) > -1;
+					}).map(item => {
+						return {
+							id: item.id,
+							marketProfit: item.marketProfit,
+							storeProfit: item.storeProfit,
+							supperMarketProfit: item.supperMarketProfit,
+							hyperMarketProfit: item.hyperMarketProfit,
+							littleArea: item.littlearea
+						}
+					});
+					console.log(this.editedList, editedList, editModel);
+					axios.post(`/province-view/profit-adjust`, JSON.stringify(editModel))
 					.then(res => {
 						this.editModal = false;
 						if(res.data.code == 200) {
@@ -570,10 +586,30 @@
 						}
 					});
 				},
+				reset() {
+					vueModel.loading = true;
+					axios.get(`/province-view/profit-reset`)
+					.then(res => {
+						vueModel.loading = false;
+						if(res.data.code == 200) {
+							if(res.data.data) {
+								this.$Message.success('操作成功！');
+								var temp = this.view
+								vueModel.view = '';
+								vueModel.view = temp;
+								this.init();
+							}
+						}
+					})
+					.catch(err => {
+						vueModel.loading = false;
+					})
+				},
 				editCancel() {
 
 				},
 				editOk() {
+					this.editedList.push(this.form.id);
 					Vue.set(this.tableRateData[this.form.index], 'marketProfit', this.form.marketProfit);
 					Vue.set(this.tableRateData[this.form.index], 'storeProfit', this.form.storeProfit);
 					Vue.set(this.tableRateData[this.form.index], 'supperMarketProfit', this.form.supperMarketProfit);
@@ -606,7 +642,6 @@
 					mapChat.on('click',(params)=>{
 						vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
 					});
-					this.view = 'china';
 					// isNotExist();
 					axios.get(`/province-view/total-table`)
 					.then((res) => {
@@ -621,22 +656,21 @@
 						this.$Message.info('操作错误');
 					}));
 				},
-				save() {},
 				distribute() {
 					console.log(this.view);
 					localStorage.setItem("provinceId", this.view);
-					window.open(`./distribute.html?id=${this.view}`);
+					window.open(`distribute.html?id=${this.view}`);
 				}
 			},
 			mounted() {
 				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
 				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
-				this.init();
 
+				this.view = 'china';
+				this.init();
 			},
 			watch : {
 				tableRateData: function() {
-					console.log('tableRateData_______');
 				},
 				loading: function() {
 					console.log(this.loading);
