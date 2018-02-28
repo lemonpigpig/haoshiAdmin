@@ -3,37 +3,37 @@ var dataobj = {
         {
             title: '总利润值',
             align: 'center',
-            key: 'value',
+            key: 'totalProfitValue',
             width: 100
         },
         {
             title: '总利润率',
             align: 'center',
-            key: 'rate',
+            key: 'totalProfit',
             width: 100
         },
         {
             title: 'DT总数',
             align: 'center',
-            key: 'dtcount',
+            key: 'dtTotalCount',
             width: 80
         },
         {
             title: 'DT数量(P.>5%)',
             align: 'center',
-            key: 'dtmore',
+            key: 'dtFiveMoreCount',
             width: 80
         },
         {
             title: 'DT数量(2%<P.<5%)',
             align: 'center',
-            key: 'dtmiddle',
+            key: 'dtTwoMoreCount',
             width: 80
         },
          {
             title: 'DT数量(P.<5%)',
             align: 'center',
-            key: 'dtsmall',
+            key: 'dtZeroMoreCount',
             width: 80
         }
     ],
@@ -41,7 +41,7 @@ var dataobj = {
         {
             title: '省份',
             align: 'center',
-            key: 'name',
+            key: 'province',
             width: 100
         },
         {
@@ -54,34 +54,34 @@ var dataobj = {
             title: '经销商',
             align: 'center',
             width: 180,
-            key: 'dealer'
+            key: 'dealerName'
         },
         {
             title: '大卖场',
             align: 'center',
             width: 100,
-            key: 'sales',
+            key: 'hyperMarketProfitValue',
             sortable: true
         },
         {
             title: '大型超市',
             align: 'center',
             width: 140,
-            key: 'supermarket',
+            key: 'supperMarketProfitValue',
             sortable: true
         },
         {
             title: '便利店',
             align: 'center',
             width: 140,
-            key: 'store',
+            key: 'storeProfitValue',
             sortable: true
         },
         {
             title: '中小超市',
             align: 'center',
             width: 140,
-            key: 'market',
+            key: 'marketProfitValue',
             sortable: true
         }
     ],
@@ -89,7 +89,7 @@ var dataobj = {
         {
             title: '省份',
             align: 'center',
-            key: 'name',
+            key: 'province',
             width: 100
         },
         {
@@ -102,34 +102,34 @@ var dataobj = {
             title: '经销商',
             align: 'center',
             width: 180,
-            key: 'dealer'
+            key: 'dealername'
         },
         {
             title: '大卖场',
             align: 'center',
             width: 120,
-            key: 'sales',
+            key: 'hyperMarketProfit',
             editable: true
         },
         {
             title: '大型超市',
             align: 'center',
             width: 120,
-            key: 'supermarket',
+            key: 'supperMarketProfit',
             editable: true
         },
         {
             title: '便利店',
             align: 'center',
             width: 120,
-            key: 'store',
+            key: 'storeProfit',
             editable: true
         },
         {
             title: '中小超市',
             align: 'center',
             width: 120,
-            key: 'market',
+            key: 'marketProfit',
             editable: true
         }
     ],

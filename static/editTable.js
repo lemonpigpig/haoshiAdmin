@@ -230,7 +230,35 @@ const editTable = {
     	return clonedData;
     },
     handleCellChange (val, index, key) {
-    	this.$Message.success('修改了第 ' + (index + 1) + ' 行列名为 ' + key + ' 的数据');
+        var littlearea = val ? (val[index] ? val[index].littlearea : '') : '';
+        axios.get(`/users/check-permission?littleArea=${littlearea}`)
+        .then(res => {
+            if(res.data.code == 200) {
+                if (res.data.data) {
+                    var info = [
+                        {
+                            "id": val ? (val[index] ? val[index].littlearea : '') : '',
+                            "littleArea": val ? (val[index] ? val[index].id : '') : '',
+                            "hyperMarketProfit": val ? (val[index] ? val[index].hyperMarketProfit : '') : '',
+                            "supperMarketProfit": val ? (val[index] ? val[index].supperMarketProfit : '') : '',
+                            "storeProfit": val ? (val[index] ? val[index].storeProfit : '') : '',
+                            "marketProfit": val ? (val[index] ? val[index].marketProfit : '') : ''
+                        }
+                    ];
+                    axios.post(`/province-view/profit-adjust`, JSON.stringify(info))
+                    .then(res => {
+                        if(res.data.code == 200) {
+                            this.$Message.success('修改成功！');
+                        } else {
+                            this.$Message.info(res.data.msg);
+                        }
+                        
+                    }); 
+                } else {
+                    this.$Message.info('您没有权限修改该行数据！');
+                }
+            }
+        });
     	console.log('index:', index, 'val:', val);
     },
 };

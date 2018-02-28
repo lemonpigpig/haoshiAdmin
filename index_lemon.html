@@ -12,6 +12,7 @@
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
 	<script src="./static/data.js" type="text/javascript"> </script>
 	<script src="./static/editTable.js"></script>
+	<script src="static/service.js"></script>
 	
 </head>
 <body>
@@ -405,13 +406,13 @@
 			"澳门": {}
 		};
 		let mapChat = null;
-		function getChinaJson() {
-			axios.get(`http://139.224.54.234:6002/mapjson/china.json`)
+		function isNotExist() {
+			axios.get(`/mapjson/china.json`)
 			.then((chinaData) =>{
 				let provinces = chinaData.data.features.map((p)=> p.properties.name);
 
 				return Promise.all(provinces.map((p)=> {
-					return Promise.all([axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(p)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + p)])
+					return Promise.all([axios.get(`/province/${encodeURIComponent(p)}.json`),axios.get(`/province-view/map?province=${p}`)])
 						.then((pData) =>{
 							let sourceCities = pData[0].data.features.map((f)=> f.properties.name);
 							let targetCities = pData[1].data.map((f)=> f.name)
@@ -459,7 +460,7 @@
 				tableHzColumns:dataobj.tableHzColumns,
 				tableData: [],
 				tableHzData: [],
-				tableRateData: dataobj.tableRateData,
+				tableRateData: [],
 				loading: loading,
 				currentPath: '',
 				shrink: false,
@@ -497,20 +498,21 @@
 					mapChat = echarts.init(document.getElementById('data-map'));
 					mapChat.on('click',(params)=>{
 						vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
-						// vueModel.getTableList(vueModel.view);
 					});
 					this.view = 'china';
-					getChinaJson();
-					this.tableHzData = [
-						{
-							value: 111111111,
-							rate: '10.0%',
-							dtcount: 10,
-							dtmore: 3,
-							dtmiddle: 4,
-							dtsmall: 3
+					// isNotExist();
+					axios.get(`/province-view/total-table`)
+					.then((res) => {
+						if(res.data.code == 200) {
+							this.tableHzData = res.data.data
+						} else {
+							this.$Message.info(res.data.msg);
 						}
-					]
+					})
+					.catch((err => {
+						console.log(err);
+						this.$Message.info('操作错误');
+					}));
 				},
 				save() {},
 				distribute() {
@@ -520,7 +522,8 @@
 				}
 			},
 			mounted() {
-				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : true;
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
 				this.init();
 				editTable.editTableInit(this);
 			},
@@ -535,15 +538,26 @@
 					console.log('ddddddd');
 				},
 				view : (view)=>{
-					if (view !== 'china' && view) {
-						vueModel.editTableInit(vueModel, dataobj.editTableColumns, dataobj.tableRateData);
-					}
 					vueModel.loading = true;
-					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart'),axios.get('http://139.224.54.234:6001/lujinsuo/list')]
-						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view),axios.get('http://139.224.54.234:6001/lujinsuo/list?key=' + view)];
+					if (view !== 'china' && view) {
+						axios.get(`/province-view/profit-adjust-search?province=${view}`)
+						.then((res) => {
+							if(res.data.code == 200) {
+								this.tableRateData = res.data.data;
+								vueModel.editTableInit(vueModel, dataobj.editTableColumns, res.data.data);
+							} else {
+								this.$Message.info(res.data.msg);
+							}
+						})
+						.catch((err) => {
+							console.log(err);
+						})
+					}
+					let ps = view === 'china' ? [axios.get(`/mapjson/china.json`),axios.get('/province-view/map'),axios.get('/province-view/profit-table')]
+						: [axios.get(`/province/${encodeURIComponent(view)}.json`),axios.get(`/province-view/map?province=${view}`),axios.get(`/province-view/profit-table?province=${view}`)];
 					Promise.all(ps)
 						.then((data)=>{
-
+							console.log("Promise:", data[0]);
 							echarts.registerMap(view, data[0].data);
 							console.log(JSON.stringify({
 								province : view,
