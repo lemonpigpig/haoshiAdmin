@@ -657,9 +657,8 @@
 					}));
 				},
 				distribute() {
-					console.log(this.view);
 					localStorage.setItem("provinceId", this.view);
-					window.open(`distribute.html?id=${this.view}`);
+					window.open(`distribute_lemon.html?id=${this.view}`);
 				}
 			},
 			mounted() {
@@ -697,7 +696,6 @@
 						: [axios.get(`/province/${encodeURIComponent(view)}.json`),axios.get(`/province-view/map?province=${view}`),axios.get(`/province-view/profit-table?province=${view}`)];
 					Promise.all(ps)
 						.then((data)=>{
-							console.log("Promise:", data[0]);
 							echarts.registerMap(view, data[0].data);
 							console.log(JSON.stringify({
 								province : view,
