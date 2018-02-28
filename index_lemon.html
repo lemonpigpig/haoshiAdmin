@@ -11,7 +11,6 @@
 	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
 	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
 	<script src="./static/data.js" type="text/javascript"> </script>
-	<script src="./static/editTable.js"></script>
 	<script src="static/service.js"></script>
 	
 </head>
@@ -105,6 +104,46 @@
 									</row>
 								</div>
 							</div>
+							<modal
+								title="编辑利润率"
+								v-model="editModal"
+								class-name="vertical-center-modal"
+								@on-ok="editOk"
+								@on-cancel="editCancel"
+								:loading="true">
+								<div class="form-con">
+									<i-form ref="editForm">
+										<form-item prop="userName" label="大卖场">
+											<i-input v-model="form.hyperMarketProfit" placeholder="请输入大卖场利率">
+												<span slot="prepend">
+													<Icon :size="16" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item  >
+										<form-item prop="password" label="大型超市">
+											<i-input v-model="form.supperMarketProfit" placeholder="请输入大型超市利率">
+												<span slot="prepend">
+													<Icon :size="14" type="locked"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="realName" label="便利店">
+											<i-input v-model="form.storeProfit" placeholder="请输入便利店利率">
+												<span slot="prepend">
+													<Icon :size="14" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="mobile" label="中小超市">
+											<i-input v-model="form.marketProfit" placeholder="请输入中小超市利率">
+												<span slot="prepend">
+													<Icon :size="14" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+									</i-form>
+								</div>
+							</modal>
 						</i-content>
 					</div>
 					
@@ -456,7 +495,7 @@
 				isMaster: null,
 				view : '',
 				tableColumns: dataobj.tableColumns,
-				editTableColumns: dataobj.editTableColumns,
+				// editTableColumns: dataobj.editTableColumns,
 				tableHzColumns:dataobj.tableHzColumns,
 				tableData: [],
 				tableHzData: [],
@@ -469,12 +508,44 @@
 				avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
 				// 可编辑表格
 				columns: [],
-				thisTableData: [],
-				edittingStore: [],
-				editIncell: true,
-				hoverShow: true,
+				currentIndex: -1,
+				editModal: false,
+				form: {
+					marketProfit: null,
+					storeProfit: null,
+					supperMarketProfit: null,
+					hyperMarketProfit: null
+				}
+
 			},
 			computed: {
+				editTableColumns() {
+					var editTableColumns = dataobj.editTableColumns;
+					var optor = {
+						title: '操作',
+						key: 'action',
+						width: 150,
+						align: 'center',
+						render: (h, params) => {
+							return h('div', [
+								h('Button', {
+									props: {
+										type: 'primary',
+										size: 'small'
+									},
+									on: {
+										click: () => {
+											this.currentIndex = params.index;
+											this.edit(params)
+										}
+									}
+								}, '编辑')
+							]);
+						}
+					};
+					editTableColumns.push(optor);
+					return editTableColumns;
+				},
 				menuitemClasses () {
 					return [
 						'menu-item',
@@ -483,6 +554,20 @@
 				}
 			},
 			methods: {
+				editCancel(data) {
+
+				},
+				editOk(data) {
+
+				},
+				edit(data) {
+					this.editModal = true;
+					this.form.marketProfit = data.row.marketProfit;
+					this.form.storeProfit = data.row.storeProfit;
+					this.form.supperMarketProfit = data.row.supperMarketProfit;
+					this.form.hyperMarketProfit = data.row.hyperMarketProfit;
+					console.log(data);
+				},
 				selectMenu(name) {
 					if (name == 1) {
 						window.open("./index.html");
@@ -504,7 +589,7 @@
 					axios.get(`/province-view/total-table`)
 					.then((res) => {
 						if(res.data.code == 200) {
-							this.tableHzData = res.data.data
+							this.tableHzData = [res.data.data];
 						} else {
 							this.$Message.info(res.data.msg);
 						}
@@ -525,17 +610,17 @@
 				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
 				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
 				this.init();
-				editTable.editTableInit(this);
+
 			},
 			watch : {
 				tableRateData: function() {
-					console.log('tableRateData');
+					console.log('tableRateData_______');
 				},
 				loading: function() {
 					console.log(this.loading);
 				},
 				tableData:function() {
-					console.log('ddddddd');
+					console.log('tableData');
 				},
 				view : (view)=>{
 					vueModel.loading = true;
@@ -543,8 +628,7 @@
 						axios.get(`/province-view/profit-adjust-search?province=${view}`)
 						.then((res) => {
 							if(res.data.code == 200) {
-								this.tableRateData = res.data.data;
-								vueModel.editTableInit(vueModel, dataobj.editTableColumns, res.data.data);
+								vueModel.tableRateData = res.data.data;
 							} else {
 								this.$Message.info(res.data.msg);
 							}
@@ -562,7 +646,7 @@
 							console.log(JSON.stringify({
 								province : view,
 								targetCities :data[0].data.features.map((f)=> f.properties.name),
-								sourceCities : data[1].data.map((f)=> f.name)
+								sourceCities : data[1].data.data.map((f)=> f.name)
 							},null,4));
 							let option  = {
 								tooltip: {},
@@ -607,7 +691,7 @@
 												return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
 											}
 										},
-										data: data[1].data.map((c)=> {
+										data: data[1].data.data.map((c)=> {
 											let mapping = cityMap[view];
 											if(mapping && mapping[c.name]){
 												c.name = mapping[c.name];
@@ -619,7 +703,7 @@
 							};
 							mapChat.setOption(option);
 
-							vueModel.tableData = data[2].data;
+							vueModel.tableData = data[2].data.data;
 						}).catch((err)=>{
 						console.log(err);
 					}).then(()=>{

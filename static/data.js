@@ -131,7 +131,7 @@ var dataobj = {
             width: 120,
             key: 'marketProfit',
             editable: true
-        }
+        },
     ],
     tableColumnsPre: [
         {
