@@ -6,12 +6,14 @@
 	<!--<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>-->
 	<link rel="stylesheet" href="./static/iview.css">
     <link rel="stylesheet" href="./static/main.css">
+	<script src="static/lib/vue/2.5.13/vue.min.js"></script>
+	<script src="static/lib/axios/0.17.1/axios.min.js"></script>
+	<script src="static/lib/iview/2.9.2/iview.min.js"></script>
+
 	<script src="https://cdn.bootcss.com/echarts/4.0.2/echarts.js"></script>
-	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
-	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
-	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
-	<script src="./static/data.js" type="text/javascript"> </script>
-	<script src="./static/editTable.js"></script>
+	
+	<script src="static/data.js" type="text/javascript"> </script>
+	<script src="static/service.js"></script>
 	
 </head>
 <body>
@@ -22,10 +24,14 @@
 					<div class="logo-con">
 						<img src="./static/logo.jpg">
 					</div>
-					<i-menu active-name="1" theme="dark" width="auto">
+					<i-menu active-name="1" theme="dark" width="auto" @on-select="selectMenu">
 						<menu-item name="1">
 							<icon type="ios-navigate"></icon>
 							<span>经销商调配</span>
+						</menu-item>
+						<menu-item name="2" v-if="isMaster">
+							<icon type="ios-navigate"></icon>
+							<span>用户管理</span>
 						</menu-item>
 					</i-menu>
 				</sider>
@@ -74,9 +80,10 @@
 										<Card :bordered="false">
 											<p slot="title">门店类型</p>
 											<p>
-												<checkbox-group v-model="saletype" @on-change="change">
-													<Checkbox :label="item.name" v-for="item in types"></Checkbox>
-												</checkbox-group>
+												<span v-for="item in types">
+													<input type="checkbox" :id="item.name" :value="item.id" v-model="typeList">
+													<label :for="item.name">{{item.name}}</label>
+												</span>
 											</p>
 										</Card>
 									</row>
@@ -472,16 +479,20 @@
 		};
 		let mapChat = null;
 		let mapChatAfter = null;
+		let typeNum = {type1: 1, type2: 2, type3: 3, type4: 4};
+		let typeKey = {type1: '大卖场', type2: '大型超市', type3: '便利店', type4: '中小超市'};
 		let vueModel  = new Vue({
 			el: '#main',
 			data : {
+				isMaster: null,
+				typeList: [],
 				view : '',
 				tableHzColumns:dataobj.tableHzColumns,
 				tableHzData: [],
 				loading: loading,
 				currentPath: '',
 				shrink: false,
-				userName: 'admin',
+				userName: '',
 				isFullScreen: false,
 				avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
 				saletype: [],
@@ -505,8 +516,9 @@
             	col: [],
 				complexData: [],
 				complexDataAfter: [],
-				types: [{name:'大卖场'}, {name: '大型超市'}, {name: '便利店'}, {name: '中小超市'}],
-				showTips: false
+				types: [{name:typeKey.type1, id: typeNum.type1}, {name: typeKey.type2, id: typeNum.type2}, {name: typeKey.type3, id: typeNum.type3}, {name: typeKey.type4, id: typeNum.type4}],
+				showTips: false,
+				
 			},
 			computed: {
 				menuitemClasses () {
@@ -517,26 +529,42 @@
 				}
 			},
 			methods: {
+				selectMenu(name) {
+					if (name == 1) {
+						window.open("./index.html");
+					}
+					if (name == 2) {
+						window.open("./user.html");
+					}
+				},
 				ok () {
 					this.$Message.info('Clicked ok');
 				},
 				cancel () {
 					this.$Message.info('Clicked cancel');
 				},
-				change(items) {
+				change() {
 					this.mapSelectedAdjust();
-					this.generateComplexTable(items);
+					this.generateComplexTable();
 				},
-				generateComplexTable(items) {
+				generateComplexTable() {
+					var items = JSON.parse(JSON.stringify(this.typeList));
+					items.sort(
+						function(v1, v2) {
+							if(v1<v2) return -1;
+							if(v1> v2) return 1;
+							else return 0;
+						}
+					);
 					this.col = [];
 					this.tds = this.defaultTd;
 					this.head = this.defaultHead;
 					var selected = [];
 					for(var i=0; i< items.length;i++) {
 						switch(items[i]) {
-							case '大卖场':
+							case typeNum.type1:
 							selected.push({
-								name: '大卖场',
+								name: typeKey.type1,
 								rowspan: 1,
 								colspan: 3
 							});
@@ -553,9 +581,9 @@
 								}
 							]);
 							break;
-							case '大型超市':
+							case typeNum.type2:
 							selected.push({
-								name: '大型超市',
+								name: typeKey.type2,
 								rowspan: 1,
 								colspan: 3
 							});
@@ -573,9 +601,9 @@
 							]);
 							
 							break;
-							case '便利店':
+							case typeNum.type3:
 							selected.push({
-								name: '便利店',
+								name: typeKey.type3,
 								rowspan: 1,
 								colspan: 3
 							});
@@ -593,9 +621,9 @@
 							]);
 							
 							break; 
-							case '中小超市':
+							case typeNum.type4:
 							selected.push({
-								name: '中小超市',
+								name: typeKey.type4,
 								rowspan: 1,
 								colspan: 3
 							});
@@ -616,17 +644,64 @@
 						}
 					}
 					if(items.length > 0) {
-						this.head = this.head.concat(selected); 
-						var data = [
-							{id: 0, checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
-							{id: 1, checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
-						];
-						this.complexData = JSON.parse(JSON.stringify(data));
-						this.complexDataAfter = JSON.parse(JSON.stringify(data));
+						this.head = this.head.concat(selected);
+						var searchData =  {
+							province: this.view,
+							type: this.typeList
+						};
+						axios.post(`/dealer-adjust-view/search`, JSON.stringify(searchData))
+						.then(res => {
+							if(res.data.code == 200) {
+								if(res.data.data) {
+									this.complexData = JSON.parse(JSON.stringify(this.mapData(res.data.data)));
+									this.complexDataAfter = JSON.parse(JSON.stringify(this.mapData(res.data.data)));
+								}
+							}
+						})
+						// console.log("this.view:", this.view, searchData);
+						// var data = [
+						// 	{id: 0, checked: false, name: '河南', ds: 'ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+						// 	{id: 1, checked: false, name: '河南', ds: '1ddddd', mds: 7, rate: '2%', value: 33.2, mds: 7, rate: '2%', value: 33.2},
+						// ];
+						
 					} else {
 						this.complexData = [];
 						this.complexDataAfter = [];
 					}
+				},
+				mapData(data) {
+					// console.log(data);
+					return data.map((item, index) => {
+						var obj = {
+							id: index,
+							checked: false,
+							name: item.province,
+							ds: item.dealerName
+						}
+						if(item.hyperMarket) {
+							obj.mds = item.hyperMarket.hyperMarketShopCount;
+							obj.rate = item.hyperMarket.hyperMarketProfit;
+							obj.value = item.hyperMarket.hyperMarketProfitValue;
+						}
+						if(item.supperMarket) {
+							obj.mds = item.supperMarket.supperMarketShopCount;
+							obj.rate = item.supperMarket.supperMarketProfit;
+							obj.value = item.supperMarket.supperMarketProfitValue;
+						}
+						if(item.store) {
+							obj.mds = item.store.storeShopCount;
+							obj.rate = item.store.storeProfit;
+							obj.value = item.store.storeProfitValue;
+						}
+						if(item.market) {
+							obj.mds = item.marketShopCount;
+							obj.rate = item.marketProfit;
+							obj.value = item.marketProfitValue;
+						}
+						// console.log(obj, item, index);
+						return obj;
+						
+					});
 				},
 				handleClickUserDropdown() {
 
@@ -635,7 +710,6 @@
 					mapChat = echarts.init(document.getElementById('data-map'));
 					mapChatAfter = echarts.init(document.getElementById('data-map-after'));
 					this.view = localStorage.getItem("provinceId");
-					console.log("this.view:", this.view);
 					this.tableHzData = [
 						{
 							value: 111111111,
@@ -705,9 +779,16 @@
 				}
 			},
 			mounted() {
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
 				this.init();
 			},
 			watch : {
+				typeList: {
+					handler(val, old) {
+						this.change();
+					}
+				},
 				complexData: {
 					handler(val, old) {
 						console.log(val, old);
@@ -722,8 +803,21 @@
 				},
 				view : (view)=>{
 					vueModel.loading = true;
-					let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart')]
-						: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view)];
+					if (view !== 'china' && view) {
+						axios.get(`/province-view/profit-adjust-search?province=${view}`)
+						.then((res) => {
+							if(res.data.code == 200) {
+								vueModel.tableRateData = res.data.data;
+							} else {
+								this.$Message.info(res.data.msg);
+							}
+						})
+						.catch((err) => {
+							console.log(err);
+						})
+					}
+					let ps = view === 'china' ? [axios.get(`/mapjson/china.json`),axios.get('/province-view/map')]
+						: [axios.get(`/province/${encodeURIComponent(view)}.json`),axios.get(`/province-view/map?province=${view}`)];
 					Promise.all(ps)
 						.then((data)=>{
 							echarts.registerMap(view, data[0].data);
@@ -752,7 +846,7 @@
 													return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
 												}
 											},
-											data: data[1].data.map((c)=> {
+											data: data[1].data.data.map((c)=> {
 												let mapping = cityMap[view];
 												if(mapping && mapping[c.name]){
 													c.name = mapping[c.name];
@@ -769,7 +863,57 @@
 					}).then(()=>{
 						vueModel.loading = false;
 					});
-				}
+				},
+				// view : (view)=>{
+				// 	vueModel.loading = true;
+				// 	let ps = view === 'china' ? [axios.get(`http://139.224.54.234:6002/mapjson/china.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart')]
+				// 		: [axios.get(`http://139.224.54.234:6002/province/${encodeURIComponent(view)}.json`),axios.get('http://139.224.54.234:6001/lujinsuo/echart?key=' + view)];
+				// 	Promise.all(ps)
+				// 		.then((data)=>{
+				// 			echarts.registerMap(view, data[0].data);
+				// 			let option  = {
+				// 					tooltip: {},
+				// 					title: {
+				// 						text: view === 'china' ? '中国' :view ,
+				// 						subtext: '利润率',
+				// 						left: 'left'
+				// 					},
+				// 					geo: {
+				// 						map: view,
+				// 						label : {
+				// 							show : true
+				// 						}
+				// 					},
+				// 					series : [
+				// 						{
+				// 							name: view,
+				// 							type: 'map',
+				// 							zoom: 1.5,
+				// 							geoIndex: 0,
+				// 							tooltip: {
+				// 								show: true,
+				// 								formatter : (params) =>{
+				// 									return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+				// 								}
+				// 							},
+				// 							data: data[1].data.map((c)=> {
+				// 								let mapping = cityMap[view];
+				// 								if(mapping && mapping[c.name]){
+				// 									c.name = mapping[c.name];
+				// 								}
+				// 								return c;
+				// 							})
+				// 						}
+				// 					]
+				// 			};
+				// 			mapChat.setOption(option);
+				// 			mapChatAfter.setOption(option);
+				// 		}).catch((err)=>{
+				// 		console.log(err);
+				// 	}).then(()=>{
+				// 		vueModel.loading = false;
+				// 	});
+				// }
 			}
 		});
 	</script>

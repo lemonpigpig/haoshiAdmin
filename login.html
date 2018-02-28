@@ -71,10 +71,9 @@
 								password: this.form.password
 							})
 							.then((res) => {
-								console.log(res.data);
 								if(res.data.code == 200) {
 									localStorage.setItem("userinfo", JSON.stringify(res.data.data));
-									if(res.data.data.status === 1) {
+									if(res.data.data.status === 1 && !res.data.data.isMaster) {
 										window.location.href = "paswd.html";	
 									} else {
 										window.location.href = "index.html";
