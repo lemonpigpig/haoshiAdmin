@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>全国视图</title>
+	<link rel="stylesheet" href="static/main.css">
+	<link rel="stylesheet" href="static/deploy.css">
+	<link rel="stylesheet" href="static/iview.css">
+	<script src="static/lib/vue/2.5.13/vue.min.js"></script>
+	<script src="static/lib/axios/0.17.1/axios.min.js"></script>
+	<script src="static/lib/iview/2.9.2/iview.min.js"></script>
+	<script src="static/lib/echarts/4.0.2/echarts.min.js"></script>
+	<script src="static/service.js"></script>
+	<script src="static/main.js"></script>
+	<script src="static/editTable.js"></script>
+</head>
+<body>
+<div class="user" id="deployMap" v-cloak>
+	<div class="main">
+		<layout>
+			<sider ref="side1" hide-trigger collapsible :collapsed-width="78">
+				<div class="logo-con">
+					<img src="./static/logo.jpg">
+				</div>
+				<i-menu active-name="2" theme="dark" width="auto" @on-select="selectMenu">
+					<menu-item name="1">
+						<icon type="ios-navigate"></icon>
+						<span>全国视图</span>
+					</menu-item>
+					<menu-item name="2">
+						<icon type="ios-navigate"></icon>
+						<span>用户管理</span>
+					</menu-item>
+				</i-menu>
+			</sider>
+			<layout>
+				<div class="main-header">
+					<div class="header-avator-con">
+						<div class="user-dropdown-menu-con">
+							<Row type="flex" justify="end" align="middle" class="user-dropdown-innercon">
+								<dropdown transfer trigger="click" @on-click="handleClickUserDropdown">
+									<a href="javascript:void(0)">
+										<span class="main-user-name">{{ userName }}</span>
+										<Icon type="arrow-down-b"></Icon>
+									</a>
+									<dropdown-menu slot="list">
+										<dropdown-item name="ownSpace">个人中心</dropdown-item>
+										<dropdown-item name="loginout" divided>退出登录</dropdown-item>
+									</dropdown-menu>
+								</dropdown>
+								<Avatar :src="avatorPath" style="background: #619fe7;margin-left: 10px;"></Avatar>
+							</Row>
+						</div>
+					</div>
+				</div>
+				<div class="single-page-con">
+					<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
+						<Row>
+							<div id="source-data-map" class="small-data-map"
+								 style="width: 500px; height: 500px;display: inline-block">
+							</div>
+							<div id="target-data-map" class="small-data-map"
+								 style="width: 500px; height: 500px;display: inline-block"></div>
+
+						</Row>
+						<row>
+
+							<Card :bordered="false">
+								<p slot="title">门店类型</p>
+								<p>
+									<checkbox-group v-model="typeSelection">
+										<Checkbox label="hyperMarket">大卖场</Checkbox>
+										<Checkbox label="supperMarket">大型超市</Checkbox>
+										<Checkbox label="store">便利店</Checkbox>
+										<Checkbox label="market">中小超市</Checkbox>
+										<checkbox-group/>
+								</p>
+							</Card>
+						</row>
+						<row>
+							<i-table :row-class-name="rowClassName" size="small" :loading="adjustLoading" stripe
+									 height="200" ref="sourceDataTable" :columns="sourceTableColumns"
+									 :data="sourceTableData"
+									 border disabled-hover @on-selection-change="sourceSelectChanged"></i-table>
+
+						</row>
+						<Row>
+							<Col offset="8" span="1">
+							<Icon style="padding: 10px 0 10px 100px" type="arrow-down-a" size="50"/>
+							</Col>
+						</Row>
+
+						<row>
+							<i-table size="small" :loading="adjustLoading" stripe height="200" highlight-row
+									 ref="targetDataTable" :columns="targetTableColumns"
+									 :data="targetTableData"
+									 border disabled-hover @on-current-change="targetSelectChanged"></i-table>
+
+						</row>
+						<Card :bordered="false">
+							<p>
+
+							<div v-if="sourceSelection.length > 0 && !!targetSelection">
+								将
+								<span v-for="source in sourceSelection">
+									<Tag type="border">{{ source.dealerName }}</Tag>
+								</span>
+								调整至
+
+								<Tag type="border">{{ targetSelection.dealerName }}</Tag>
+
+							</div>
+							<div v-if="sourceSelection.length > 0 && !!targetSelection">
+								<i-Button type="primary" @click="dataAdjust()" :loading="adjustLoading">调整</i-Button>
+							</div>
+							<div v-else>
+								<i-Button type="warning" disabled>选择后进行调整</i-Button>
+							</div>
+							</p>
+						</Card>
+						<Card :bordered="false">
+							<p slot="title">全国汇总表格</p>
+							<p>
+								<i-table :loading="adjustLoading || sumLoading " :columns="tableSumColumns"
+										 :data="tableSumData" border disabled-hover></i-table>
+							</p>
+						</Card>
+
+
+						<Card :bordered="false">
+							<p slot="title">已完成的调整</p>
+							<p>
+							<ul>
+								<li v-for="adjust in adjustList">
+									<tag v-for="source in adjust.sources" type="border">{{ source.dealerName }}</tag>
+									调整至
+									<tag type="border">{{ adjust.target.dealerName }}</tag>
+								</li>
+							</ul>
+							<div>
+								<i-Button type="primary" @click="dataSave()">保存</i-Button>
+								<i-Button type="primary" @click="dataCancel()">取消</i-Button>
+								<i-Button type="primary" @click="dataReset()">重置</i-Button>
+							</div>
+
+							</p>
+						</Card>
+
+
+						</row>
+					</i-content>
+				</div>
+			</layout>
+		</layout>
+	</div>
+
+</div>
+<script>
+	let deployTableColumns = [
+		{
+			title: '城市',
+			align: 'center',
+			key: 'city',
+		},
+		{
+			title: '经销商',
+			align: 'center',
+			key: 'dealerName',
+		}
+	];
+	let typeMap = {
+		'hyperMarket': '大卖场',
+		'supperMarket': '大型超市',
+		'store': '便利店',
+		'market': '中小超市',
+	};
+	let typeValueMap = {
+		'hyperMarket': 1,
+		'supperMarket': 2,
+		'store': 3,
+		'market': 4,
+	};
+	let vueModel = new Vue({
+		el: '#deployMap',
+		data() {
+			return {
+				userName: '',
+				avatorPath: '',
+
+				typeSelection: ['hyperMarket'],
+
+				tableSumColumns: [
+					{
+						title: '总利润值',
+						align: 'center',
+						key: 'totalProfitValue',
+					},
+					{
+						title: '总利润率',
+						align: 'center',
+						key: 'totalProfit',
+					},
+					{
+						title: 'DT总数',
+						align: 'center',
+						key: 'dtTotalCount',
+					},
+					{
+						title: 'DT数量(P.>5%)',
+						align: 'center',
+						key: 'dtFiveMoreCount',
+					},
+					{
+						title: 'DT数量(2%<P.<5%)',
+						align: 'center',
+						key: 'dtTwoMoreCount',
+					},
+					{
+						title: 'DT数量(P.<5%)',
+						align: 'center',
+						key: 'dtZeroMoreCount',
+					}
+				],
+				tableSumData: [],
+
+				sourceTableColumns: [],
+				targetTableColumns: [],
+
+				sourceTableData: [],
+				targetTableData: [],
+
+				sourceSelection: [],
+				targetSelection: null,
+
+				adjustList: [],
+
+				mapLoading: false,
+
+				adjustLoading: false,
+				sumLoading: false,
+
+
+				province: '',
+				littleArea: '',
+			}
+		},
+		mounted() {
+			let qs = $$getQueryParams();
+
+			this.province = qs.province;
+
+			this.sourceDataMap = echarts.init(this.$el.querySelector('#source-data-map'));
+			this.targetDataMap = echarts.init(this.$el.querySelector('#target-data-map'));
+
+
+			this.mapLoading = true;
+
+
+			$$getMap(`mapjson3/province/${encodeURIComponent(this.province)}.json`).then((data) => {
+
+				this.mapNames = data.data.features.map((f) => f.properties.name);
+				echarts.registerMap(this.province, data.data);
+
+
+				this.refreshMapData();
+				this.refreshTableData();
+			}).catch((err) => {
+				this.$Message.error(err);
+			}).then(() => {
+				this.mapLoading = false;
+			});
+
+			this.sumLoading = true;
+			$$get('dealer-adjust-view/total-table', {
+				province: this.province
+			}).then((result) => {
+				this.tableSumData = [result.data.data];
+				this.sumLoading = false;
+			})
+		},
+		watch: {
+			typeSelection(types) {
+				this.refreshTableData();
+			},
+			sourceTableData() {
+				this.sourceSelection = [];
+			},
+			targetTableData() {
+				this.targetSelection = null;
+			},
+			mapLoading(loading) {
+				if (loading) {
+					this.sourceDataMap.showLoading();
+					this.targetDataMap.showLoading();
+				}
+				else {
+					this.sourceDataMap.hideLoading();
+					this.targetDataMap.hideLoading();
+				}
+			},
+			sourceSelection(selection) {
+				this.makeMapSelect(this.sourceDataMap,selection.reduce((l,r)=>{
+					l.push.apply(l,r.citys)
+					return l;
+				},[]));
+			},
+			targetMapSelectCities(cities){
+				this.makeMapSelect(this.targetDataMap,cities);
+			}
+		},
+		computed : {
+			targetMapSelectCities(){
+				if(this.targetSelection){
+					return this.targetSelection.citys;
+				}
+				else{
+					return this.adjustList.reduce((l,r)=>{
+						r.sources.forEach((s)=>{
+							l.push.apply(l,s.citys);
+						});
+						l.push.apply(r.target.citys);
+						return l;
+					} ,[]);
+				}
+			}
+		},
+		methods: {
+			makeMapSelect(map,cities){
+				this.$nextTick(()=>{
+					this.mapNames.forEach((city) => {
+						map.dispatchAction({
+							type: cities && cities.includes(city) ? 'mapSelect' : 'mapUnSelect',
+							seriesName: this.province,
+							name: city
+						});
+					})
+				});
+			},
+			refreshMapData() {
+				this.mapLoading = true;
+				$$get(`dealer-adjust-view/map`,{
+					isTemp : this.adjustList.length > 0,
+					province : this.province
+				})
+					.then((result) => {
+						let sourceOption = {
+							title: {
+								text: '原始数据',
+								subtext: '利润率',
+								left: 'left'
+							},
+							series: [
+								{
+
+									name: this.province,
+									type: 'map',
+									mapType: this.province,
+									label: {
+										show: true
+									},
+//								selectedMode : 'multiple',
+									tooltip: {
+										show: true,
+										formatter: (params) => {
+											return isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+										}
+									},
+									data: result.data.data.map((c) => {
+										let mapping = cityMap[this.province];
+										if (mapping && mapping[c.name]) {
+											c.name = mapping[c.name];
+										}
+										return c;
+									})
+								}
+							]
+						};
+
+						let targetOption = {
+							title: {
+								text: '调配后数据',
+								subtext: '利润率',
+								left: 'left'
+							},
+							series: [
+								{
+									name: this.province,
+									type: 'map',
+									mapType: this.province,
+									label: {
+										show: true
+									},
+									tooltip: {
+										show: true,
+										formatter: (params) => {
+											return isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+										}
+									},
+									data: result.data.data.map((c) => {
+										let mapping = cityMap[this.province];
+										if (mapping && mapping[c.name]) {
+											c.name = mapping[c.name];
+										}
+										return c;
+									})
+								}
+							]
+						};
+
+						this.sourceDataMap.setOption(sourceOption);
+						this.targetDataMap.setOption(targetOption);
+
+						this.mapLoading = false;
+					})
+			},
+			refreshTableData() {
+				this.adjustLoading = true;
+
+				let types = this.typeSelection;
+
+				this.targetTableColumns = types.map((type) => {
+					return [
+						{
+							renderHeader(h, d) {
+								return h('div', [h('div', typeMap[type]), h('div', '门店数')]);
+							},
+							align: 'left',
+							key: type + 'ShopCount',
+						},
+						{
+							renderHeader(h, d) {
+								return h('div', [h('div', typeMap[type]), h('div', '利润率')]);
+							},
+							align: 'left',
+							key: type + 'Profit',
+						},
+						{
+							renderHeader(h, d) {
+								return h('div', [h('div', typeMap[type]), h('div', '利润值')]);
+							},
+							align: 'left',
+							key: type + 'ProfitValue',
+
+						}
+					]
+				}).reduce((left, right) => left.concat(right), deployTableColumns);
+
+				this.sourceTableColumns = [{
+					type: 'selection'
+				}].concat(this.targetTableColumns);
+
+
+				$$post('dealer-adjust-view/search', {
+					"province": this.province,
+					"type": types.map((type) => typeValueMap[type]),
+					"isTemp" : this.adjustList.length > 0
+
+				}).then((result) => {
+					this.sourceTableData = result.data.data.map((item) => {
+						this.typeSelection.forEach((type) => {
+							['ShopCount', 'Profit', 'ProfitValue'].forEach((field) => {
+								item[type + field] = item[type][type + field];
+							})
+
+							this.littleArea = item.littleArea;
+						});
+
+//						item._disabled = this.adjustList.some((a)=> a.sources.find((s)=> s.dealerCode == item.dealerCode));
+
+						let adjust = this.adjustList.find((a) => a.sources.find((s) => s.dealerCode == item.dealerCode));
+
+						item._disabled = !!adjust;
+//						if(adjust){
+//							item.dealerName = item.dealerName + ' -> ' + adjust.target.dealerName;
+//						}
+
+
+						return item;
+					});
+
+					this.targetTableData = this.sourceTableData;
+
+					this.adjustLoading = false;
+				})
+			},
+
+			handleClickUserDropdown() {
+
+			},
+			selectMenu(name) {
+				if (name == 1) {
+					window.open("./index.html");
+				}
+				if (name == 2) {
+					window.open("./user.html");
+				}
+			},
+			sourceSelectChanged(selection) {
+				this.sourceSelection = selection;
+			},
+			targetSelectChanged(row) {
+				this.targetSelection = row;
+			},
+			adjustListParams(){
+				return this.adjustList.map((a)=>{
+					return {
+						"littleArea": this.littleArea,
+						"province": this.province,
+						"type": this.typeSelection.map((t) => typeValueMap[t])
+						,
+						"leftDealer": a.sources.map((s) => {
+							return {
+								"city": s.city,
+								"dealerCode": s.dealerCode
+							}
+						})
+						,
+						"rightDealer": {
+							"city": a.target.city,
+							"dealerCode": a.target.dealerCode
+						}
+					}
+				});
+			},
+			dataAdjust() {
+				this.adjustLoading = true;
+
+				this.adjustList.push({
+					sources: this.sourceSelection,
+					target: this.targetSelection
+				});
+
+				$$post('dealer-adjust-view/save-before', this.adjustListParams())
+					.then((result) => {
+					this.tableSumData = [result.data.data];
+					this.adjustLoading = false;
+
+					this.refreshTableData();
+					this.refreshMapData();
+				})
+			},
+			dataSave() {
+				this.$Modal.confirm({
+					title: '保存调整',
+					content: '<p>所有调整即将保存，并返回全国视图，是否确认?</p>',
+					onOk: () => {
+						$$post('dealer-adjust-view/profit-adjust',this.adjustListParams())
+							.then((result)=>{
+								window.location.href = '/index.html';
+							})
+					}
+				});
+			},
+			dataCancel() {
+				this.adjustList.pop();
+				this.refreshTableData();
+				this.refreshMapData();
+				this.$Message.info('已取消上一次调整');
+			},
+			dataReset() {
+				this.$Modal.confirm({
+					title: '重置调整',
+					content: '<p>所有调整即将重置，是否继续?</p>',
+					onOk: () => {
+						this.adjustLoading = true;
+						$$get('dealer-adjust-view/profit-reset')
+							.then(() => {
+								this.adjustLoading = false;
+
+								this.adjustList = [];
+								this.refreshTableData();
+								this.refreshMapData();
+								this.$Message.info('数据已重置');
+							});
+					}
+				});
+			},
+			rowClassName(row, index) {
+				return row._disabled ? 'adjust-row' : '';
+			}
+		}
+	});
+</script>
+</body>
+</html>

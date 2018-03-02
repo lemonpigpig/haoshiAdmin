@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>修改密码</title>
+	<link rel="stylesheet" href="./static/iview.css">
+	<link rel="stylesheet" href="./static/login.css">
+	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
+	<script src="static/service.js"></script>
+	<script src="static/main.js"></script>
+</head>
+<body>
+	 <div class="login" @keydown.enter="handleSubmit" id="pawsd" v-cloak>
+        <div class="login-con">
+            <Card :bordered="false">
+                <p slot="title">
+                    <Icon type="log-in"></Icon>
+                    修改密码
+                </p>
+                <div class="form-con">
+                    <i-form ref="loginForm" :model="form" :rules="rules">
+                        <form-item prop="oldPaswd" v-if="!isMaster">
+                            <i-input type="password" v-model="form.oldPaswd" placeholder="请输入旧密码">
+                                <span slot="prepend">
+                                    <Icon :size="14" type="locked"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item>
+						 <form-item prop="password">
+                            <i-input type="password" v-model="form.password" placeholder="请输入新密码">
+                                <span slot="prepend">
+                                    <Icon :size="14" type="locked"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item>
+						<form-item prop="confirePassword">
+                            <i-input v-model="form.confirePassword" placeholder="请再次确认密码">
+                                <span slot="prepend">
+                                    <Icon :size="16" type="locked"></Icon>
+                                </span>
+                            </i-input>
+                        </form-item  >
+                        <form-item>
+                            <i-button @click="handleSubmit" type="primary" long>确定</i-button>
+                        </form-item>
+                    </i-form>
+                </div>
+            </Card>
+        </div>
+    </div>
+	<script>
+		new Vue({
+			el: "#pawsd",
+			data() {
+				return {
+					isMaster: false,
+					form: {
+						confirePassword: '',
+						oldPaswd: '',
+						password: ''
+					},
+					rules: {
+						confirePassword: [
+							{ required: true, message: '确认密码不能为空', trigger: 'blur' }
+						],
+						oldPaswd: [
+							{ required: true, message: '旧密码不能为空', trigger: 'blur' }
+						],
+						password: [
+							{ required: true, message: '新密码不能为空', trigger: 'blur' }
+						]
+					}
+				}
+			},
+			mounted() {
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+			},
+			methods: {
+				handleSubmit() {
+					this.$refs.loginForm.validate((valid) => {
+						if (valid) {
+							$$post(`users/edit-password`, {
+								"confirePassword": this.form.confirePassword,
+								"oldPassword": this.form.oldPaswd,
+								"newPassword": this.form.password
+							})
+							.then((res) => {
+								if(res.data.code == 200) {
+									if(res.data.data) {
+										localStorage.setItem("userinfo", '');
+										window.location.href = "login.html";
+									} else {
+										this.$Message.info("请输入正确的旧密码！");
+									}
+									
+								} else {
+									this.$Message.info(res.data.msg);
+								}
+							})
+							
+						}
+					});
+				}
+			}
+		})
+	</script>
+</body>
+</html>

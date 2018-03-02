@@ -816,8 +816,40 @@
 							console.log(err);
 						})
 					}
+					axios.get(`/province/${encodeURIComponent(view)}.json`)
+					.then((res) => {
+						console.log(res.data);
+						echarts.registerMap(view, res.data);
+						let option  = {
+									tooltip: {},
+									title: {
+										text: view === 'china' ? '中国' :view ,
+										subtext: '利润率',
+										left: 'left'
+									},
+									series : [
+										{
+											name: view,
+											type: 'map',
+											mapType: view,
+											tooltip: {
+												show: true,
+												formatter : (params) =>{
+													return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+												}
+											},
+											data: [{name: "昌吉回族自治州", value: 4.32, population: 0}]
+										}
+									]
+							};
+							mapChat.setOption(option);
+							mapChatAfter.setOption(option);
+					});
+
+					return;
 					let ps = view === 'china' ? [axios.get(`/mapjson/china.json`),axios.get('/province-view/map')]
 						: [axios.get(`/province/${encodeURIComponent(view)}.json`),axios.get(`/province-view/map?province=${view}`)];
+						
 					Promise.all(ps)
 						.then((data)=>{
 							echarts.registerMap(view, data[0].data);
@@ -828,18 +860,11 @@
 										subtext: '利润率',
 										left: 'left'
 									},
-									geo: {
-										map: view,
-										label : {
-											show : true
-										}
-									},
 									series : [
 										{
 											name: view,
 											type: 'map',
-											zoom: 1.5,
-											geoIndex: 0,
+											mapType: view,
 											tooltip: {
 												show: true,
 												formatter : (params) =>{

@@ -1,6 +1,6 @@
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {
-    // config.url = `/api${config.url}`;
+    config.url = `/api${config.url}`;
     config.headers.token = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).token : '';
     config.headers['Content-Type'] = 'application/json';
     // 在发送请求之前做些什么
@@ -13,7 +13,6 @@ axios.interceptors.request.use(function (config) {
 // 添加响应拦截器
 axios.interceptors.response.use(function (response) {
     // 对响应数据做点什么
-    console.log(response);
     return response;
 }, function (error) {
     console.log(error.response);

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>全国视图</title>
+	<!--<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>-->
+	<link rel="stylesheet" href="./static/iview.css">
+    <link rel="stylesheet" href="./static/main.css">
+	<script src="https://cdn.bootcss.com/echarts/4.0.2/echarts.js"></script>
+	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+	<script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+	<script src="https://cdn.bootcss.com/iview/2.9.2/iview.min.js"></script>
+	<script src="./static/data.js" type="text/javascript"> </script>
+	<script src="static/service.js"></script>
+	<script src="static/main.js"></script>
+
+</head>
+<body>
+	<div id="main" class="app-main" v-cloak>
+		<div class="main">
+			<layout>
+				<sider ref="side1" hide-trigger collapsible :collapsed-width="78">
+					<div class="logo-con">
+						<img src="./static/logo.jpg">
+					</div>
+					<i-menu active-name="1" theme="dark" width="auto" @on-select="selectMenu">
+						<menu-item name="1">
+							<icon type="ios-navigate"></icon>
+							<span>经销商调配</span>
+						</menu-item>
+						<menu-item name="2" v-if="isMaster">
+							<icon type="ios-navigate"></icon>
+							<span>用户管理</span>
+						</menu-item>
+					</i-menu>
+				</sider>
+				<layout>
+					<div class="main-header">
+						<div class="header-avator-con">
+							<div class="user-dropdown-menu-con">
+								<Row type="flex" justify="end" align="middle" class="user-dropdown-innercon">
+									<dropdown transfer trigger="click" @on-click="handleClickUserDropdown">
+										<a href="javascript:void(0)">
+											<span class="main-user-name">{{ userName }}</span>
+											<Icon type="arrow-down-b"></Icon>
+										</a>
+										<dropdown-menu slot="list">
+											<dropdown-item name="ownSpace">个人中心</dropdown-item>
+											<dropdown-item name="loginout" divided>退出登录</dropdown-item>
+										</dropdown-menu>
+									</dropdown>
+									<Avatar :src="avatorPath" style="background: #619fe7;margin-left: 10px;"></Avatar>
+								</Row>
+							</div>
+						</div>
+					</div>
+					<div class="single-page-con">
+						<my-component></my-component>
+						<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
+							<div id="data-map" style="width: 1000px; height: 500px;">
+							</div>
+							<div id="container">
+								<Col class="demo-spin-col" span="8">
+									<Spin fix v-if="loading">
+										<Icon type="load-c" size=18 class="demo-spin-icon-load"></Icon>
+										<div>Loading</div>
+									</Spin>
+								</Col>
+								<div id="data-table">
+									<row>
+										<Col class="demo-spin-col" span="8">
+											<Spin fix v-if="!tableData || tableData.length==0">
+												<Icon type="load-c" size=18 class="demo-spin-icon-load"></Icon>
+												<div>Loading</div>
+											</Spin>
+										</Col>
+										<i-table height="320" :columns="tableColumns" :data="tableData" border disabled-hover v-else></i-table>
+										<Card :bordered="false" v-if="view === 'china'">
+											<p slot="title">全国汇总表格</p>
+											<p>
+												<i-table :columns="tableHzColumns" :data="tableHzData" border disabled-hover ></i-table>
+											</p>
+										</Card>
+										<Card :bordered="false" v-if="view !== 'china'">
+											<p slot="title">{{view}}利润率表格</p>
+											<p>
+												<i-table ref="table" :columns="editTableColumns" :data="tableRateData" border disabled-hover></i-table>
+											</p>
+										</Card>
+										<Card v-if="this.view !== 'china'">
+											<Row :gutter="10" style="margin-top: 20px;">
+												<Col span="3" class="padding-left-10">
+													<i-Button type="primary" size="small" @click="save()">保存</i-Button>
+												</Col>
+												<Col span="3" class="padding-left-10">
+													<i-Button type="primary" size="small">重置</i-Button>
+												</Col>
+												<Col span="3" class="padding-left-10">
+													<i-Button type="primary" size="small" @click="deploy()">调配</i-Button>
+												</Col>
+												
+											</Row>
+										</Card>
+										
+									</row>
+								</div>
+							</div>
+							<modal
+								title="编辑利润率"
+								v-model="editModal"
+								class-name="vertical-center-modal"
+								@on-ok="editOk"
+								@on-cancel="editCancel"
+								:loading="true">
+								<div class="form-con">
+									<i-form ref="editForm">
+										<form-item prop="userName" label="大卖场">
+											<i-input v-model="form.hyperMarketProfit" placeholder="请输入大卖场利率">
+												<span slot="prepend">
+													<Icon :size="16" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item  >
+										<form-item prop="password" label="大型超市">
+											<i-input v-model="form.supperMarketProfit" placeholder="请输入大型超市利率">
+												<span slot="prepend">
+													<Icon :size="14" type="locked"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="realName" label="便利店">
+											<i-input v-model="form.storeProfit" placeholder="请输入便利店利率">
+												<span slot="prepend">
+													<Icon :size="14" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="mobile" label="中小超市">
+											<i-input v-model="form.marketProfit" placeholder="请输入中小超市利率">
+												<span slot="prepend">
+													<Icon :size="14" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+									</i-form>
+								</div>
+							</modal>
+						</i-content>
+					</div>
+					
+				</layout>
+			</layout>
+		</div>
+	</div>
+	
+	<script>
+		let loading = false;
+
+		let mapChat = null;
+		function isNotExist() {
+			$$get(`mapjson/china.json`)
+			.then((chinaData) =>{
+				let provinces = chinaData.data.features.map((p)=> p.properties.name);
+
+				return Promise.all(provinces.map((p)=> {
+					return Promise.all([$$getMap(`mapjson3/province/${encodeURIComponent(p)}.json`),$$get(`province-view/map?province=${p}`)])
+						.then((pData) =>{
+							let sourceCities = pData[0].data.features.map((f)=> f.properties.name);
+							let targetCities = pData[1].data.map((f)=> f.name)
+
+							let notFound = [];
+							let mapping = targetCities.map((t)=>{
+								let re = new RegExp(t,'ig');
+								let found = sourceCities.find((s)=> re.test(s));
+								if(!found){
+									console.error(`${t} not found`);
+									notFound.push(t);
+									found = "" + t;
+								}
+								return [t,found];
+							});
+
+							return {
+								province : p,
+	//								sources : sourceCities,
+	//								targets : targetCities,
+									mapping : mapping,
+	//								notFound : notFound
+								}
+							});
+					}));
+				}).then((datas)=>{
+					let mapping = {};
+					datas.forEach((m)=>{
+						let cityMapping = {};
+						m.mapping.forEach((cm)=>{
+							cityMapping[cm[0]] = cm[1]
+						});
+						mapping[m.province] = cityMapping
+					});
+					// console.log(JSON.stringify(mapping,null,4));
+			});
+		}
+		let vueModel  = new Vue({
+			el: '#main',
+			data : {
+				isMaster: null,
+				view : '',
+				tableColumns: dataobj.tableColumns,
+				// editTableColumns: dataobj.editTableColumns,
+				tableHzColumns:dataobj.tableHzColumns,
+				tableData: [],
+				tableHzData: [],
+				tableRateData: [],
+				loading: loading,
+				currentPath: '',
+				shrink: false,
+				userName: 'admin',
+				isFullScreen: false,
+				avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
+				// 可编辑表格
+				columns: [],
+				currentIndex: -1,
+				editModal: false,
+				form: {
+					marketProfit: null,
+					storeProfit: null,
+					supperMarketProfit: null,
+					hyperMarketProfit: null
+				}
+
+			},
+			computed: {
+				editTableColumns() {
+					var editTableColumns = dataobj.editTableColumns;
+					var optor = {
+						title: '操作',
+						key: 'action',
+						width: 150,
+						align: 'center',
+						render: (h, params) => {
+							return h('div', [
+								h('Button', {
+									props: {
+										type: 'primary',
+										size: 'small'
+									},
+									on: {
+										click: () => {
+											this.currentIndex = params.index;
+											this.edit(params)
+										}
+									}
+								}, '编辑')
+							]);
+						}
+					};
+					editTableColumns.push(optor);
+					return editTableColumns;
+				},
+				menuitemClasses () {
+					return [
+						'menu-item',
+						this.isCollapsed ? 'collapsed-menu' : ''
+					]
+				}
+			},
+			methods: {
+				editCancel(data) {
+
+				},
+				editOk(data) {
+
+				},
+				edit(data) {
+					this.editModal = true;
+					this.form.marketProfit = data.row.marketProfit;
+					this.form.storeProfit = data.row.storeProfit;
+					this.form.supperMarketProfit = data.row.supperMarketProfit;
+					this.form.hyperMarketProfit = data.row.hyperMarketProfit;
+					console.log(data);
+				},
+				selectMenu(name) {
+					if (name == 1) {
+						window.open("./index.html");
+					}
+					if (name == 2) {
+						window.open("./user.html");
+					}
+				},
+				handleClickUserDropdown() {
+
+				},
+				init() {
+					mapChat = echarts.init(document.getElementById('data-map'));
+					mapChat.on('click',(params)=>{
+						vueModel.view = (vueModel.view !== 'china' || !params.name) ? 'china' : params.name ;
+					});
+					this.view = 'china';
+					// isNotExist();
+					$$get(`province-view/total-table`)
+					.then((res) => {
+						if(res.data.code == 200) {
+							this.tableHzData = [res.data.data];
+						} else {
+							this.$Message.info(res.data.msg);
+						}
+					})
+					.catch((err => {
+						console.log(err);
+						this.$Message.info('操作错误');
+					}));
+				},
+				save() {},
+				deploy(){
+//					console.log(this.view);
+//					localStorage.setItem("provinceId", this.view);
+					window.location.href = (`/deploy.html?province=${encodeURIComponent(this.view)}`);
+				}
+			},
+			mounted() {
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
+				this.init();
+
+			},
+			watch : {
+				tableRateData: function() {
+					console.log('tableRateData_______');
+				},
+				loading: function() {
+					console.log(this.loading);
+				},
+				tableData:function() {
+					console.log('tableData');
+				},
+				view : (view)=>{
+					vueModel.loading = true;
+					if (view !== 'china' && view) {
+						$$get(`province-view/profit-adjust-search?province=${view}`)
+						.then((res) => {
+							if(res.data.code == 200) {
+								vueModel.tableRateData = res.data.data;
+							} else {
+								this.$Message.info(res.data.msg);
+							}
+						})
+						.catch((err) => {
+							console.log(err);
+						})
+					}
+					let ps = view === 'china' ? [$$get(`mapjson/china.json`),$$get('province-view/map'),$$get('province-view/profit-table')]
+						: [$$get(`province/${encodeURIComponent(view)}.json`),$$get(`province-view/map?province=${view}`),$$get(`province-view/profit-table?province=${view}`)];
+					Promise.all(ps)
+						.then((data)=>{
+							console.log("Promise:", data[0]);
+							echarts.registerMap(view, data[0].data);
+							console.log(JSON.stringify({
+								province : view,
+								targetCities :data[0].data.features.map((f)=> f.properties.name),
+								sourceCities : data[1].data.data.map((f)=> f.name)
+							},null,4));
+							let option  = {
+								tooltip: {},
+								// visualMap: {
+								// 	type : 'piecewise',
+								// 	pieces : [
+								// 		{ min : -99 , max : 0 , color : 'grey'},
+								// 		{ min : 0 , max : 2 ,color : 'red' },
+								// 		{ min : 2 , max : 5 ,color : 'yellow'},
+								// 		{ min : 5 ,color : 'green'},
+								// 	]
+								// },
+								title: {
+									text: view === 'china' ? '中国' :view ,
+									subtext: '利润率',
+									left: 'left'
+								},
+								dataRange: {
+									min: -5,
+									max : 5,
+									text:['高','低'],           // 文本，默认为数值文本
+									calculable : true,
+									x: 'left',
+									color: ['orangered','yellow','lightskyblue', 'gray']
+								},
+								geo: {
+									map: view,
+//									roam: true,
+									label : {
+										show : true
+									}
+								},
+								series : [
+									{
+										name: view,
+										type: 'map',
+										geoIndex: 0,
+										tooltip: {
+											show: true,
+											formatter : (params) =>{
+//												console.log(params);
+												return  isNaN(params.value) ? '无数据' : `${params.name} : ${params.value }`;
+											}
+										},
+										data: data[1].data.data.map((c)=> {
+											let mapping = cityMap[view];
+											if(mapping && mapping[c.name]){
+												c.name = mapping[c.name];
+											}
+											return c;
+										})
+									}
+								]
+							};
+							mapChat.setOption(option);
+
+							vueModel.tableData = data[2].data.data;
+						}).catch((err)=>{
+						console.log(err);
+					}).then(()=>{
+						vueModel.loading = false;
+					});
+				}
+			}
+		});
+	</script>
+<style>
+
+    .demo-spin-icon-load{
+        animation: ani-demo-spin 1s linear infinite;
+    }
+    @keyframes ani-demo-spin {
+        from { transform: rotate(0deg);}
+        50%  { transform: rotate(180deg);}
+        to   { transform: rotate(360deg);}
+    }
+    .demo-spin-col{
+        height: 100px;
+        position: relative;
+        border: 1px solid #eee;
+    }
+	.show-edit-btn{
+		display: none;
+		margin-left: -10px;
+	}
+	.ivu-table-cell:hover .show-edit-btn{
+		display: inline-block;
+	}
+</style>
+</body>
+</html>

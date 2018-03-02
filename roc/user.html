@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>用户</title>
+	<link rel="stylesheet" href="static/main.css">
+	<link rel="stylesheet" href="static/iview.css">
+	<link rel="stylesheet" href="static/login.css">
+	<script src="static/lib/vue/2.5.13/vue.min.js"></script>
+	<script src="static/lib/axios/0.17.1/axios.min.js"></script>
+	<script src="static/lib/iview/2.9.2/iview.min.js"></script>
+	<script src="static/service.js"></script>
+	<script src="static/main.js"></script>
+</head>
+<body>
+	 <div class="user" id="user" v-cloak>
+		 <div class="main" v-if="isMaster">
+			<layout>
+				<sider ref="side1" hide-trigger collapsible :collapsed-width="78">
+					<div class="logo-con">
+						<img src="./static/logo.jpg">
+					</div>
+					<i-menu active-name="2" theme="dark" width="auto" @on-select="selectMenu">
+						<menu-item name="1"> 
+							<icon type="ios-navigate"></icon>
+							<span>经销商调配</span>
+						</menu-item>
+						<menu-item name="2">
+							<icon type="ios-navigate"></icon>
+							<span>用户管理</span>
+						</menu-item>
+					</i-menu>
+				</sider>
+				<layout>
+					<div class="main-header">
+						<div class="header-avator-con">
+							<div class="user-dropdown-menu-con">
+								<Row type="flex" justify="end" align="middle" class="user-dropdown-innercon">
+									<dropdown transfer trigger="click" @on-click="handleClickUserDropdown">
+										<a href="javascript:void(0)">
+											<span class="main-user-name">{{ userName }}</span>
+											<Icon type="arrow-down-b"></Icon>
+										</a>
+										<dropdown-menu slot="list">
+											<dropdown-item name="ownSpace">个人中心</dropdown-item>
+											<dropdown-item name="loginout" divided>退出登录</dropdown-item>
+										</dropdown-menu>
+									</dropdown>
+									<Avatar :src="avatorPath" style="background: #619fe7;margin-left: 10px;"></Avatar>
+								</Row>
+							</div>
+						</div>
+					</div>
+					<div class="single-page-con">
+						<i-content :style="{overflow: 'auto', margin: '20px', background: '#fff'}">
+							<Card :bordered="true">
+								<p><i-button type="primary" @click="add">新增</i-button></p>
+							</Card>
+
+							<div><i-table border :columns="columns" :data="tableList"></i-table></div>
+							<modal
+								:title="title"
+								v-model="addModal"
+								class-name="vertical-center-modal"
+								@on-ok="addOk"
+								@on-cancel="addCancel"
+								:loading="true">
+								<div class="form-con">
+									<i-form ref="addForm" :model="form" :rules="rules">
+										<form-item prop="userName" label="用户名">
+											<i-input v-model="form.userName" placeholder="请输入用户名">
+												<span slot="prepend">
+													<Icon :size="16" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item  >
+										<form-item prop="password" label="密码">
+											<i-input type="password" v-model="form.password" placeholder="请输入密码">
+												<span slot="prepend">
+													<Icon :size="14" type="locked"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="realName" label="真实姓名">
+											<i-input v-model="form.realName" placeholder="真实姓名">
+												<span slot="prepend">
+													<Icon :size="14" type="person"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<form-item prop="mobile" label="手机号">
+											<i-input v-model="form.mobile" placeholder="手机号" type="phone">
+												<span slot="prepend">
+													<Icon :size="14" type="android-call"></Icon>
+												</span>
+											</i-input>
+										</form-item>
+										<Card>
+											<p slot="title">用户权限</p>
+											<p>
+												<span v-for="item in form.permissionList" class="permissions-checkbox">
+													<input type="checkbox" :id="item.permissionName" :value="item.id" v-model="permissionNames">
+													<label :for="item.permissionName">{{item.permissionName}}</label>
+												</span>
+											</p>
+										</Card>
+									</i-form>
+									<p class="login-tip">用户名和密码必填</p>
+								</div>
+							</modal>
+						</i-content>
+					</div>
+					
+				</layout>
+			</layout>
+		</div>
+		<h2 v-else>只有系统管理员才能访问该页面</h2>
+		
+    </div>
+	<script>
+		new Vue({
+			el: "#user",
+			data() {
+				return {
+					isMaster: null,
+					title: '',
+					isEdit: false,
+					form: {
+						userName: '',
+						password: '',
+						realName: '',
+						mobile: '',
+						permissionList: []
+					},
+					rules: {
+						userName: [
+							{ required: true, message: '用户名不能为空', trigger: 'blur' }
+						],
+						password: [
+							{ required: true, message: '密码不能为空', trigger: 'blur' }
+						],
+						mobile: [
+							{ validator: this.validatorMobile }
+						]
+						// pattern
+					},
+					modal: false,
+					addModal: false,
+					currentIndex: -1,
+					permissionNames: [],
+					columns: [
+						{
+							title: '用户名',
+							key: 'userName',
+							render: (h, params) => {
+								return h('div', [
+									h('Icon', {
+										props: {
+											type: 'person'
+										}
+									}),
+									h('strong', params.row.userName)
+								]);
+							},
+							width: 120
+						},
+						{
+							title: '真实姓名',
+							key: 'realName',
+						},
+						{
+							title: '手机号',
+							key: 'mobile',
+						},
+						{
+							title: '密码',
+							key: 'password'
+						},
+						{
+							title: '权限',
+							key: 'permissions',
+							render: (h, params) => {
+								return h('div',
+									params.row.permissions.map((item) => {
+										return [
+											h('li', item.permissionName),
+										];
+									})
+								);
+							},
+						},
+						{
+							title: '操作',
+							key: 'action',
+							width: 150,
+							align: 'center',
+							render: (h, params) => {
+								return h('div', [
+									h('Button', {
+										props: {
+											type: 'primary',
+											size: 'small'
+										},
+										on: {
+											click: () => {
+												this.currentIndex = params.index;
+												this.title = `编辑用户${this.tableList[this.currentIndex].userName}信息`;
+												this.edit(params)
+											}
+										}
+									}, '编辑')
+								]);
+							}
+						}
+					],
+					tableList: [
+					],
+					userName: '',
+					isFullScreen: false,
+					avatorPath: "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=3448484253,3685836170&fm=27&gp=0.jpg",
+					};
+			},
+			mounted() {
+				this.isMaster = localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).isMaster : false;
+				this.userName =  localStorage.getItem("userinfo") ? JSON.parse(localStorage.getItem("userinfo")).userName : '';
+				this.getData();
+				// console.log(123);
+			},
+			methods: {
+				reset() {
+					this.form.userName = '';
+					this.form.password = '';
+					this.form.realName = '';
+					this.form.mobile = '';
+					this.permissionNames = [];
+				},
+				getData() {
+					$$get(`users/search`)
+					.then((res) => {
+						if(res.data.code == 200) {
+							if(res.data.data) {
+								this.tableList = res.data.data;
+							}
+						}
+					});
+					$$get(`users/permission`)
+					.then((res) => {
+						this.form.permissionList = res.data.data;
+					});
+				},
+				selectMenu(name) {
+					if (name == 1) {
+						window.open("./index.html");
+					}
+					if (name == 2) {
+						window.open("./user.html");
+					}
+				},
+				handleClickUserDropdown() {
+
+				},
+				validatorMobile(rule, value, callback) {
+					var regex = /\d{11}/;
+					if(!value) {
+						return callback(new Error('请输入电话号码'));
+					}
+					else if(!regex.test(value)) {
+						return callback(new Error('请输入正确的电话号码'));
+					}
+					else {
+						callback();
+					}
+				},
+				addOk() {
+					var data = {
+						"id": this.isEdit ? this.isEdit : 0,
+						"userName": this.form.userName,
+						"password": this.form.password,
+						"realName": this.form.realName,
+						"mobile": this.form.mobile,
+						"permissions": this.permissionNames
+					};
+					$$post(`users/add-edit`, data)
+					.then((res) => {
+						if(res.data.code == 200) {
+							this.addModal = false;
+							this.getData();
+							this.$Message.info('操纵成功');
+						} else {
+							this.addModal = false;
+							this.$Message.info(res.data.msg);
+						}
+
+						
+					});
+					
+				},
+				addCancel() {},
+				add() {
+					this.isEdit = false;
+					this.addModal = true;
+					this.title = `新增用户`;
+					this.reset();
+				},
+				edit(item, type) {
+					this.isEdit = item.row.id;
+					this.addModal = true;
+					this.form.userName = item.row.userName;
+					this.form.password = item.row.password;
+					this.form.realName = item.row.realName;
+					this.form.mobile = item.row.mobile;;
+					this.permissionNames = [];
+					var hadPermissions = item.row.permissions;
+					hadPermissions.forEach(item => {
+						// console.log("item:", item);
+						this.permissionNames.push(item.id)
+					});
+				},
+			}
+		});
+	</script>
+	<style>
+		.permissions-checkbox {
+			padding: 5px;
+		}
+	</style>
+</body>
+</html>
